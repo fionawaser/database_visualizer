@@ -1,0 +1,117 @@
+/*
+Author: Fiona Waser
+*/
+
+html {
+	font-family: Arial, Helvetica, sans-serif;
+	background-color: #fcfcfc;
+	font-size: 15px;
+}
+
+h1 {
+	color: #000066;
+}
+
+h2 {
+	color: #000066;
+}
+
+h3 {
+	color: #000066;
+}
+
+.queryControlWords {
+	font-weight: bold;
+}
+
+ul.nav {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #9ad3de;
+	font-size: 18px;
+}
+
+ul.nav li {
+    float: left;
+}
+
+ul.nav li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+ul.nav li a:hover {
+    background-color: #89bdd3;
+}
+
+.active {
+    background-color: #0099cc;
+}
+
+#content {
+	width: 100%;
+	height: auto;
+}
+
+#diagram {
+	float: left;
+	width: auto;
+	height: auto;
+}
+
+#rows {
+	float: left;
+	width: 100%;
+}
+
+#rightSidebar {
+	float: right;
+	height: auto;
+	width: 43%;
+	margin: 40px;
+}
+
+#searchInterface {
+	width: 100%;
+	border-radius: 25px;
+	margin: 15px;
+	padding: 5px;
+}
+
+div.histogramIcon {
+	background-image: url(img/histogram_img.ico);
+	width: 35px;
+	height: 24px;
+}
+
+table {
+	font-size: 15px;
+}
+
+#setup > th, td {
+    border: 0;
+}
+
+th, td {
+    border-bottom: 1px solid #ddd;
+	border-left: 1px solid #ddd;
+}
+
+.axis {
+	font: 10px sans-serif;
+}
+ 
+.axis path, .axis line {
+	fill: none;
+	stroke: black;
+	shape-rendering: crispEdges;
+}
+ 
+#circle:hover path.fade {
+	display: none;
+}

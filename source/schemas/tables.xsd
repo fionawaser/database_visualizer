@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+<xs:schema>
+	<xs:complexType name="tables">
+		<xs:sequence>
+			<xs:complexType name="table" minOccurs="1">
+				<xs:element name="name" type="xs:string"/>
+				<xs:element name="nr_rows" type="xs:positiveInteger"/>
+				<xs:complexType name="attributes">
+					<xs:sequence>
+						<xs:complexType name="attribute" minOccurs="1">
+							<xs:element name="field" type="xs:string"/>
+							<xs:element name="type" type="xs:string"/>
+							<xs:element name="null_" type="xs:string"/>
+							<xs:element name="key" type="xs:string" nillable="true"/>
+							<xs:element name="default" type="xs:string" nillable="true"/>
+							<xs:element name="extra" type="xs:string" nillable="true"/>
+							<xs:element name="nr_diff_values" type="xs:string"/>
+						</xs:complexType>
+					</xs:sequence>
+					<xs:attribute name="unit" type="xs:string"/> 
+				</xs:complexType>
+				<xs:complexType name="constraints">
+					<xs:sequence>
+						<xs:complexType name="constraint">
+							<xs:element name="column_name" type="xs:string"/>
+							<xs:element name="constraint_name" type="xs:string"/>
+							<xs:element name="referenced_column_name" type="xs:string" nillable="true"/>
+							<xs:element name="referenced_table_name" type="xs:string" nillable="true"/>
+							<xs:element name="nr_diff_column_values" type="xs:string"/>
+						</xs:complexType>
+					</xs:sequence>
+				</xs:complexType>
+				<xs:attribute name="isJoinTable" type="xs:boolean"/> 
+			</xs:complexType>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

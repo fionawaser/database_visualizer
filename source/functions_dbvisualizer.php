@@ -386,7 +386,12 @@ function processQueryHeaderRequest($query) {
 	$res = mysqli_query($con, $query);
 	$finfo = mysqli_fetch_fields($res);
 	foreach ($finfo as $val) {
-		array_push($rows, $val->name);
+		$element["name"] = $val->name;
+		$element["orgname"] = $val->orgname;
+		$element["table"] = $val->table;
+		$element["orgtable"] = $val->orgtable;
+		
+		array_push($rows, $element);
 	}
 	mysqli_free_result($res);
 	

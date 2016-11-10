@@ -29,7 +29,7 @@ $tables = simplexml_load_file("tables.xml");
 
 $nr_tables = $tables->count();
 
-if(isset($_POST['refreshRowInfo'])) {
+if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes") {
 	refreshRowRelatedInfo($con, $tables, $dbn);
 }
 ?>
@@ -40,10 +40,15 @@ if(isset($_POST['refreshRowInfo'])) {
 		<li><a href="structural.php" class="active">Structural Information</a></li>
 		<li><a href="search.php">Content Information - Search</a></li>
 	</ul> 
-	<h3>Database: <?php print($dbn); ?>, Number of Tables: <?php print($nr_tables); ?></h3>
+	<h3>Database: <?php print($dbn); ?>, Number of Tables: <?php print($nr_tables); ?>
+		<div id="helpParent" class="help">
+			<div id="helpPopup" style="display: none">Some helpful things!</div>
+		</div>
+	</h3>
 	<div id="structuralForm">
 		<form id="refreshInfosForm" name="refreshInfosForm" action="" method="post">
-			<input type="submit" name="refreshRowInfo" value="Refresh Row-Related Infos">
+			<input type="hidden" name="refreshConfirmation" id="refreshConfirmation" value="">
+			<input type="submit" name="refreshRowInfo" value="Refresh Row-Related Infos" onclick="confirmRefreshRowRelatedInfo();">
 		</form>
 	</div>
 	<div id="content">
@@ -51,14 +56,23 @@ if(isset($_POST['refreshRowInfo'])) {
 			<h2>Tables</h2>
 		</div>
 		<div id="rightSidebar">
-			<div id="query"></div>
+			<div id="sortChordDiagram">
+				<h3>Sort by:</h3>
+				<form action="" method="post">
+					<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onchange="drawStructuralChordDiagramInit();" checked> Alphabetical<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onchange="drawStructuralChordDiagramInit();"> Nr. Rows<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onchange="drawStructuralChordDiagramInit();"> Nr. Fields<br>
+				</form>
+			</div>
 			<div id="attributeInfo"></div>
 		</div>
+		<div id="legends"></div>
 		<div id="rows">
 			<h2>Rows</h2>
 			<div id="rowsConfig">
-				<p>Number of rows: <input type="number" name="limit" id="limit" value="10"/></p>
+				<p>Number of rows: <input type="number" name="limit" id="limit" value="10" onchange="showRows();"/></p>
 			</div>
+			<div id="query"></div>
 			<div id="rowsTable"></div>
 		</div>
 	</div>
@@ -72,6 +86,6 @@ if(isset($_POST['refreshRowInfo'])) {
 		}
 	}
 	
-	drawStructuralChordDiagramInit();
+	prepareStructuralView();
 </script>
 </html>

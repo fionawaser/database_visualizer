@@ -16,10 +16,54 @@ var chosenAttributes = [];
 var chosenAttributeAggrFunctions = [];
 var chosenAttributesOrderBy = [];
 
+function prepareStructuralView() {
+	$("#helpParent").mouseover(function() {
+		$(this).children("#helpPopup").show();
+	}).mouseout(function() {
+		$(this).children("#helpPopup").hide();
+	});
+	
+	drawStructuralChordDiagramInit();
+}
+
 function drawStructuralChordDiagramInit() {
 	d3.xml("tables.xml", "application/xml", function(xml) {
 		
 		tables = xml.getElementsByTagName("table");
+		
+		var sorting = $('input[name="sortModePath"]:checked').val();
+		
+		var tablesSortMapping = [];
+		for(var i = 0; i < tables.length; i++) {
+			if(sorting == "alphabetical") {
+				tablesSortMapping[i] = i;
+			} else {
+				var sortTableLength = tablesSortMapping.length;
+				if(sorting == "nrRows") {
+					var currentValue = parseFloat(tables[i].children[1].textContent);
+						
+					var index = 0;
+					while((index < sortTableLength) && (currentValue > parseFloat(tables[tablesSortMapping[index]].children[1].textContent))) {
+						index++;
+					}
+					tablesSortMapping.splice(index, 0, i);
+				} else if(sorting == "nrFields") {
+					var attributesLength = tables[i].children[2].children.length;
+						
+					var index = 0;
+					while((index < sortTableLength) && (attributesLength > tables[tablesSortMapping[index]].children[2].children.length)) {
+						index++;
+					}
+					tablesSortMapping.splice(index, 0, i);
+				}
+			}
+		}
+		
+		var newTables = [];
+		for(var i = 0; i < tablesSortMapping.length; i++) {
+			newTables[i] = tables[tablesSortMapping[i]];
+		}
+		tables = newTables;
 		
 		for(var i = 0; i < tables.length; i++) {
 			matrix[i] = [];
@@ -41,7 +85,7 @@ function drawStructuralChordDiagramInit() {
 				attributeCardinalitiesPercentages[i][k] = "";
 				chosenAttributes[i][k] = true;
 				chosenAttributeAggrFunctions[i][k] = "None";
-				chosenAttributesOrderBy[i][k] = false;
+				chosenAttributesOrderBy[i][k] = "None";
 			}
 				
 			constraintCardinalities[i] = [];
@@ -96,11 +140,13 @@ function drawStructuralChordDiagramInit() {
 							}
 							constraintCardinalitiesPercentages[n][k] += (nr_diff_column_values / nr_diff_valuesSearch)+" ";
 							var percentage = constraintCardinalitiesPercentages[n][k] * 100;
-									
+								
+							var cardinality = constraintCardinalities[n][j];
+							var cardinalityPercent = (nr_diff_column_values / nr_diff_valuesSearch)*100;
 							if(old_references == "") {
-								references[n][k] = "PK: "+referenced_table_name+"."+referenced_column_name+" <- FK: "+tablename+"."+column_name+", Constraint: "+constraint_name+" ("+constraintCardinalities[n][j].toLocaleString('de-DE')+" ~ "+((nr_diff_column_values / nr_diff_valuesSearch)*100).toLocaleString('de-DE')+"%)";
+								references[n][k] = "PK: "+referenced_table_name+"."+referenced_column_name+" <- FK: "+tablename+"."+column_name+", Constraint: "+constraint_name+" ("+formatNumber(cardinality)+" ~ "+formatNumber(cardinalityPercent)+"%)";
 							} else {
-								references[n][k] = old_references.concat("\nPK: "+referenced_table_name+"."+referenced_column_name+" <- FK: "+tablename+"."+column_name+", Constraint: "+constraint_name+" ("+constraintCardinalities[n][j].toLocaleString('de-DE')+" ~ "+((nr_diff_column_values / nr_diff_valuesSearch)*100).toLocaleString('de-DE')+"%)");
+								references[n][k] = old_references.concat("\nPK: "+referenced_table_name+"."+referenced_column_name+" <- FK: "+tablename+"."+column_name+", Constraint: "+constraint_name+" ("+formatNumber(cardinality)+" ~ "+formatNumber(cardinalityPercent)+"%)");
 							}
 						}
 					}
@@ -110,23 +156,59 @@ function drawStructuralChordDiagramInit() {
 		graph = new Graph(map);
 		
 		drawStructuralChordDiagram();
+		
 	});
 }
 
+function confirmRefreshRowRelatedInfo() {
+	if(confirm('This may take several minutes. Are you sure you want to perform this action now?')) {
+		document.getElementById("refreshConfirmation").value = "yes";
+	}
+}
+
 function drawStructuralChordDiagram() {
+	clearElement("#diagram");
+	
 	var width = 800,
 		height = 800,
 		outerRadius = Math.min(width, height) / 2 - 50,
 		innerRadius = outerRadius - 62;
+		
+	var svg = d3.select("#diagram").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.append("g")
+		.attr("id", "circle")
+		.style("font", "12px sans-serif")
+		.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
-	var values = [];
+	var density_color_picker = d3.scale.linear()
+		.domain([0, tables.length-1])
+		.range(["#ffbf00", "#ff0000"]);
+		
+	var values_nr_rows_domain = [];
 	for(var n = 0; n < tables.length; n++) {
-		values.push(tables[n].children[1].textContent);
+		var current_value = parseFloat(tables[n].children[1].textContent);
+		
+		if(values_nr_rows_domain == null) {
+			values_nr_rows_domain.push(current_value);
+		} else {
+			var index = 0;
+			while(current_value > values_nr_rows_domain[index]) {
+				index++;
+			}
+			values_nr_rows_domain.splice(index, 0, current_value);
+		}
 	}
-	var density = getDensityRange(values);
+	var values_nr_rows_range = [];
+	for(var n = 0; n < values_nr_rows_domain.length; n++) {
+		values_nr_rows_range[n] = density_color_picker(n);
+	}
+	
 	var density_colors = d3.scale.linear()
-		.domain([density.min, density.max])
-		.range(["#FFFFFF", "#FF6600"]);
+		.domain(values_nr_rows_domain)
+		.range(values_nr_rows_range);
+	
 	var cardinality_colors = d3.scale.linear()
 		.domain([0, 1])
 		.range(["white", "steelblue"]);
@@ -136,20 +218,10 @@ function drawStructuralChordDiagram() {
 		.outerRadius(outerRadius-40);
 			
 	var layout = d3.layout.chord()
-		.padding(.04)
-		.sortSubgroups(d3.descending)
-		.sortChords(d3.ascending);
+		.padding(.04);
 
 	var path = d3.svg.chord()
 		.radius(innerRadius);
-
-	var svg = d3.select("#diagram").append("svg")
-		.attr("width", width)
-		.attr("height", height)
-		.append("g")
-		.attr("id", "circle")
-		.style("font", "12px sans-serif")
-		.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
 	svg.append("circle")
 		.style("fill", "none")
@@ -170,19 +242,30 @@ function drawStructuralChordDiagram() {
 
 	group.append("title").text(function(d, i) {
 		var number = parseFloat(tables[i].children[1].textContent);
-			
-		return tables[i].children[0].textContent+" ("+number.toLocaleString('de-DE')+" rows)";
+		return tables[i].children[0].textContent+" ("+formatNumber(number)+" rows)";
 	});
 
 	var groupPath = group.append("path")
 		.attr("id", function(d, i) { return "group" + i; })
 		.attr("d", arc)
-		.style("fill", function(d, i) { return density_colors(tables[i].children[1].textContent); })
+		.style("fill", function(d, i) { return density_colors(i); })
 		.style("fill-opacity", ".5")
 		.style("stroke", "black")
 		.style("stroke-width", ".25px")
 		.on('click', function(d) {
+			$(".group:eq("+d.index+") text").d3Click();
+		})
+		.on("mouseover", function(d) {
+			d3.select(this).style("cursor", "pointer");
+			
+			$(".group:eq("+d.index+") text").css("font-weight", "bold");
+			
 			showAttributeInfo(d.index);
+		})
+		.on("mouseout", function(d) {
+			d3.select(this).style("cursor", "default");
+			
+			$(".group:eq("+d.index+") text").css("font-weight", "normal");
 		});
 			
 	var groupText = group.append("text")
@@ -198,14 +281,24 @@ function drawStructuralChordDiagram() {
 		.on('click', function(d) {
 			showAttributeInfo(d.index);
 			setTableChosen(d.index);
-				
-			if(checkTableChosen(d.index)) {
-				d3.select(this).style("font-weight", "bold");
-			} else {
-				d3.select(this).style("font-weight", "normal");
+			
+			$(".group path").css("stroke-width", ".25px");
+			for(var i = 0; i < chosenTables.length; i++) {
+				$(".group:eq("+chosenTables[i]+") path").css("stroke-width", "2.5px");
 			}
-				
+			
 			showRows();
+		})
+		.on("mouseover", function(d) {
+			d3.select(this).style("cursor", "pointer");
+			
+			d3.select(this).style("font-weight", "bold");
+			
+			showAttributeInfo(d.index);
+		})
+		.on("mouseout", function(d) {
+			d3.select(this).style("cursor", "default");
+			d3.select(this).style("font-weight", "normal");
 		});
 
 	var chord = svg.selectAll(".chord")
@@ -213,21 +306,29 @@ function drawStructuralChordDiagram() {
 		.enter().append("path")
 		.attr("class", "chord")
 		.style("fill", function(d) {
-			var values = constraintCardinalitiesPercentages[d.source.index][d.target.index].split(" ");
-			var valuesSum = 0;
-			for(var i = 0; i < (values.length-1); i++) {
-				valuesSum += parseFloat(values[i]);
-			}
-			var cumulatedPercentage = valuesSum / (values.length-1);
-				
-			return cardinality_colors(cumulatedPercentage);
+			return cardinality_colors(getCardinalityCumulatedPercentage(d));
 		})
 		.attr("d", path)
 		.style("stroke", "#000")
 		.style("stroke-width", ".25px")
 		.on('click', function(d) {
-			$(".group:eq("+d.target.index+") text").d3Click();
+			if(chosenTables.length != 0) {
+				chosenTables = [];
+			}
+			
 			$(".group:eq("+d.source.index+") text").d3Click();
+			$(".group:eq("+d.target.index+") text").d3Click();
+		})
+		.on("mouseover", function(d) {
+			d3.select(this).style("cursor", "pointer");
+			
+			$(".group:eq("+d.source.index+") text").css("font-weight", "bold");
+			$(".group:eq("+d.target.index+") text").css("font-weight", "bold");
+		}).on("mouseout", function(d) {
+			d3.select(this).style("cursor", "default");
+			
+			$(".group:eq("+d.source.index+") text").css("font-weight", "normal");
+			$(".group:eq("+d.target.index+") text").css("font-weight", "normal");
 		});
 
 	chord.append("title").text(function(d) {
@@ -237,6 +338,44 @@ function drawStructuralChordDiagram() {
 			return references[d.source.index][d.target.index];
 		}
 	});
+}
+
+function getDensityRange(values) {
+	var min = 0;
+	var max = 0;
+	
+	for(var n = 0; n < values.length; n++) {
+		var currentValue = values[n];
+		
+		if(min == 0 || max == 0) {
+			min = currentValue;
+			max = currentValue;
+		} else {
+			if(currentValue < min) {
+				min = currentValue;
+			}
+			
+			if(currentValue > max) {
+				max = currentValue;
+			}
+		}
+	}
+	
+	return {
+		min: min,
+		max: max
+	};
+}
+
+function getCardinalityCumulatedPercentage(d) {
+	var values = constraintCardinalitiesPercentages[d.source.index][d.target.index].split(" ");
+	var valuesSum = 0;
+	for(var i = 0; i < (values.length-1); i++) {
+		valuesSum += parseFloat(values[i]);
+	}
+	var cumulatedPercentage = valuesSum / (values.length-1);
+	
+	return cumulatedPercentage;
 }
 
 function checkTableChosen(tableIndex) {
@@ -281,15 +420,15 @@ function checkAggrFunctionChosen(tableIndex, attributeIndex) {
 }
 
 function checkChosenAttributesOrderBy(tableIndex, attributeIndex) {
-	return chosenAttributesOrderBy[tableIndex][attributeIndex];
+	if(chosenAttributesOrderBy[tableIndex][attributeIndex] == "None") {
+		return false;
+	} else {
+		return true;
+	}
 }
 
-function setChosenAttributesOrderBy(tableIndex, attributeIndex) {
-	if(checkChosenAttributesOrderBy(tableIndex, attributeIndex)) {
-		chosenAttributesOrderBy[tableIndex][attributeIndex] = false;
-	} else {
-		chosenAttributesOrderBy[tableIndex][attributeIndex] = true;
-	}
+function setChosenAttributesOrderBy(tableIndex, attributeIndex, order) {
+	chosenAttributesOrderBy[tableIndex][attributeIndex] = order;
 }
 
 function showAttributeInfo(index) {
@@ -304,9 +443,10 @@ function showAttributeInfo(index) {
 	
 	var content = "<p><h2>Attributes: "+tablename+"</h2>";
 	content += "<table id='attributesTable'>";
-	content += "<tr><th></th><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th><th>Cardinality</th><th>AggFunction</th><th>OrderBy</th></tr>";
+	content += "<tr><th></th><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th><th>Unit</th><th>Cardinality</th><th>AggFunction</th><th>OrderBy</th></tr>";
 	
 	var aggregateFunctions = getAggregateFunctions();
+	var orderByFunctions = getOrderByFunctions();
 	
 	for(var j = 0; j < attributes.length; j++) {
 		var field = attributes[j].children[0].textContent;
@@ -315,23 +455,33 @@ function showAttributeInfo(index) {
 		var key = attributes[j].children[3].textContent;
 		var default_ = attributes[j].children[4].textContent;
 		var extra = attributes[j].children[5].textContent;
+		var unit = "";
+		
+		if(attributes[j].attributes.length != 0) {
+			var unitAttribute = attributes[j].attributes[0].nodeValue;
+			
+			if(unitAttribute == "money") {
+				unit = "Money";
+			}
+		}
 		
 		var cardinalityInfo = "";
 		var cardinalityLow = false;
+		var percent = attributeCardinalitiesPercentages[index][j]*100;
 		if(attributeCardinalities[index][j] <= 50) {
-			cardinalityInfo = "low ("+attributeCardinalities[index][j]+" - "+(attributeCardinalitiesPercentages[index][j]*100).toLocaleString('de-DE')+"%)";
+			cardinalityInfo = "low ("+attributeCardinalities[index][j]+" - "+formatNumber(percent)+"%)";
 			if(key != "PRI") {
 				cardinalityLow = true;
 			}
 		} else if(attributeCardinalitiesPercentages[index][j] == 1) {
-			cardinalityInfo = "high ("+attributeCardinalities[index][j]+" - "+(attributeCardinalitiesPercentages[index][j]*100).toLocaleString('de-DE')+"%)";
+			cardinalityInfo = "high ("+attributeCardinalities[index][j]+" - "+formatNumber(percent)+"%)";
 		} else {
-			cardinalityInfo = "high ("+attributeCardinalities[index][j]+" - "+(attributeCardinalitiesPercentages[index][j]*100).toLocaleString('de-DE')+"%)";
+			cardinalityInfo = "high ("+attributeCardinalities[index][j]+" - "+formatNumber(percent)+"%)";
 		}
 		
 		var rowHeight = 20;
 		var barWidth = fullRectWidth * attributeCardinalitiesPercentages[index][j];
-		var svg = "<svg width='"+fullRectWidth+"' height='"+rowHeight+"'><rect width='"+barWidth+"' height='"+rowHeight+"' style='fill: red;' /></svg>";
+		var svg = "<svg width='"+fullRectWidth+"' height='"+rowHeight+"'><rect width='"+barWidth+"' height='"+rowHeight+"' style='fill: steelblue;' /></svg>";
 		
 		var choserContent = "<td onclick='setAttributeChosen("+index+", "+j+");'>";
 		if(checkAttributeChosen(index, j)) {
@@ -347,20 +497,18 @@ function showAttributeInfo(index) {
 		}
 		aggFunctionsHtml += "</select>";
 		
-		var choserContentOrder = "<td onclick='setChosenAttributesOrderBy("+index+", "+j+");'>";
-		if(checkChosenAttributesOrderBy(index, j)) {
-			choserContentOrder += "<input type='checkbox' name='"+field+"' value='"+field+"' onchange='showRows();' checked='checked'>";
-		} else {
-			choserContentOrder += "<input type='checkbox' name='"+field+"' value='"+field+"' onchange='showRows();'>";
+		var choserContentOrder = "<select name='chooseOrderByFunctions' onchange='setChosenAttributesOrderBy("+index+", "+j+", this.value); showRows();'>";
+		for(var i = 0; i < orderByFunctions.length; i++) {
+			choserContentOrder += "<option value='"+orderByFunctions[i]+"'>"+orderByFunctions[i]+"</option>";
 		}
-		choserContentOrder += "</td>";
+		choserContentOrder += "</select>";
 		
 		var histogramChooser = "";
 		if(cardinalityLow) {
 			histogramChooser = "<div onclick='prepareHistogram(&quot;"+tablename+"&quot;, &quot;"+field+"&quot;);' class='histogramIcon'>&nbsp;</div>";
 		}
 		
-		content += "<tr>"+choserContent+"<td>"+field+histogramChooser+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+aggFunctionsHtml+"</td>"+choserContentOrder+"</tr>";
+		content += "<tr>"+choserContent+"<td>"+field+""+histogramChooser+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+unit+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+aggFunctionsHtml+"</td><td>"+choserContentOrder+"</td></tr>";
 	}
 	
 	content += "</table></p>";
@@ -451,12 +599,12 @@ function showRows() {
 				var attributes = table.children[2].children;
 				for(var p = 0; p < attributes.length; p++) {
 					if(checkChosenAttributesOrderBy(index, p)) {
-						order += attributes[p].firstChild.textContent+", ";
-						orderVisual += attributes[p].firstChild.textContent+", ";
+						order += attributes[p].firstChild.textContent+" "+chosenAttributesOrderBy[index][p]+", ";
+						orderVisual += attributes[p].firstChild.textContent+" <span class='queryControlWords'>"+chosenAttributesOrderBy[index][p]+"</span>, ";
 					}
 				}
 				order = order.substring(0, order.length-2);
-				orderVisual = order.substring(0, order.length-2);
+				orderVisual = orderVisual.substring(0, orderVisual.length-2);
 			}
 		} else if(chosenTables.length > 1) {
 			for(var i = 0; i < chosenTables.length; i++) {
@@ -539,8 +687,8 @@ function showRows() {
 							var attributes = table.children[2].children;
 							for(var p = 0; p < attributes.length; p++) {
 								if(checkChosenAttributesOrderBy(j, p)) {
-									order += pathAliases[i]+"."+attributes[p].firstChild.textContent+", ";
-									orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+", ";
+									order += pathAliases[i]+"."+attributes[p].firstChild.textContent+" "+chosenAttributesOrderBy[index][p]+", ";
+									orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" <span class='queryControlWords'>"+chosenAttributesOrderBy[index][p]+"</span>, ";
 								}
 							}
 						}
@@ -595,8 +743,8 @@ function showRows() {
 										var attributes = table.children[2].children;
 										for(var p = 0; p < attributes.length; p++) {
 											if(checkChosenAttributesOrderBy(j, p)) {
-												order += pathAliases[i]+"."+attributes[p].firstChild.textContent+", ";
-												orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+", ";
+												order += pathAliases[i]+"."+attributes[p].firstChild.textContent+" "+chosenAttributesOrderBy[index][p]+", ";
+												orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" <span class='queryControlWords'>"+chosenAttributesOrderBy[index][p]+"</span>, ";
 											}
 										}
 									}
@@ -641,25 +789,24 @@ function showRows() {
 			
 			if(!chosenAttributesOrderByEmpty) {
 				order = order.substring(0, order.length-2);
-				orderVisual = order.substring(0, order.length-2);
+				orderVisual = orderVisual.substring(0, orderVisual.length-2);
 			}
 		}
 		
-		var query = "SELECT "+attributesQuery+" FROM "+tablesQuery+" "+joins+" "+order;
-		var queryVisual = "<span class='queryControlWords'>SELECT</span> "+attributesQuery+" <span class='queryControlWords'>FROM</span> "+tablesQueryVisual+" "+joinsVisual+" "+orderVisual;
-		
-		var queryDivContent = "<h2>Query:</h2>"+queryVisual;
-		document.getElementById("query").innerHTML = queryDivContent;
-		
 		var limit = document.getElementById('limit').value;
-		var queryLimited = query+" LIMIT "+limit;
+		
+		var query = "SELECT "+attributesQuery+" FROM "+tablesQuery+" "+joins+" "+order+" LIMIT "+limit;
+		var queryVisual = "<span class='queryControlWords'>SELECT</span> "+attributesQuery+" <span class='queryControlWords'>FROM</span> "+tablesQueryVisual+" "+joinsVisual+" "+orderVisual+" <span class='queryControlWords'>LIMIT</span> "+limit;
+		
+		var queryDivContent = "<h2>Query</h2>"+queryVisual;
+		document.getElementById("query").innerHTML = queryDivContent;
 		
 		var resultRows = "";			
 		jQuery.ajax({
 			type: "POST",
 			url: 'requests.php',
 			dataType: 'json',
-			data: {functionname: 'processQueryRequest', argument: queryLimited},
+			data: {functionname: 'processQueryRequest', argument: query},
 
 			success: function (obj, textstatus) {
 				if(!('error' in obj) ) {
@@ -670,15 +817,37 @@ function showRows() {
 						type: "POST",
 						url: 'requests.php',
 						dataType: 'json',
-						data: {functionname: 'processQueryHeaderRequest', argument: queryLimited},
+						data: {functionname: 'processQueryHeaderRequest', argument: query},
 
 						success: function (obj, textstatus) {
 							if(!('error' in obj) ) {
 								resultHeader = obj.result;
-											
+
 								var tableHeader = "";
 								for(var i = 0; i < resultHeader.length; i++) {
-									tableHeader += "<th>"+resultHeader[i]+"</th>";
+									tableHeader += "<th>"+resultHeader[i].name;
+									
+									for(var j = 0; j < tables.length; j++) {
+										var tablename = tables[j].firstChild.textContent;
+										if(tablename == resultHeader[i].orgtable) {
+											var attributes = tables[j].children[2].children;
+											for(var l = 0; l < attributes.length; l++) {
+												var attributeName = attributes[l].firstChild.textContent;
+												if(attributeName == resultHeader[i].orgname) {
+													var cardinalityLow = false;
+													var key = attributes[l].children[3].textContent;
+													if(attributeCardinalities[j][l] <= 50 && key != "PRI") {
+														cardinalityLow = true;
+													}
+													if(cardinalityLow) {
+														tableHeader += " <div onclick='prepareHistogram(&quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;);' class='histogramIcon'>&nbsp;</div>";
+													}
+												}
+											}
+										}
+									}
+									
+									tableHeader += "</th>";
 								}
 											
 								var rows = "";
@@ -714,70 +883,55 @@ function clearElement(name) {
 	el.selectAll("*").remove();
 }
 
-function getDensityRange(values) {
-	var min = 0;
-	var max = 0;
-	
-	for(var n = 0; n < values.length; n++) {
-		var currentValue = values[n];
-		
-		if(min == 0 || max == 0) {
-			min = currentValue;
-			max = currentValue;
-		} else {
-			if(currentValue < min) {
-				min = currentValue;
-			}
-			
-			if(currentValue > max) {
-				max = currentValue;
-			}
-		}
-	}
-	
-	return {
-		min: min,
-		max: max
-	};
-}
-
 function getAggregateFunctions() {
 	return ["None", "AVG", "COUNT", "MAX", "MIN", "SUM"];
 }
 
-jQuery.fn.d3Click = function () {
-  this.each(function (i, e) {
-    var evt = new MouseEvent("click");
-    e.dispatchEvent(evt);
-  });
-};
+function getOrderByFunctions() {
+	return ["None", "ASC", "DESC"];
+}
 
 function prepareHistogram(table, attribute) {
 	var query = "SELECT "+attribute+", COUNT("+attribute+") FROM "+table+" GROUP BY "+attribute;
 	
 	var resultRows = "";			
-		jQuery.ajax({
-			type: "POST",
-			url: 'requests.php',
-			dataType: 'json',
-			data: {functionname: 'processQueryRequest', argument: query},
+	jQuery.ajax({
+		type: "POST",
+		url: 'requests.php',
+		dataType: 'json',
+		data: {functionname: 'processQueryRequest', argument: query},
 
-			success: function (obj, textstatus) {
-				if(!('error' in obj) ) {
-					resultRows = obj.result;
+		success: function (obj, textstatus) {
+			if(!('error' in obj) ) {
+				resultRows = obj.result;
 								
-					var newWindow = window.open('');
-					var newWindowRoot = d3.select(newWindow.document.body);
+				var heightNewWindow = ($(document).height())-600;
+				var widthNewWindow = ($(document).width())-600;
+				
+				var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
+				var newWindowRoot = d3.select(newWindow.document.body)
+					.style("font-family", "Arial, Helvetica, sans-serif")
+					.style("background-color", "#fcfcfc")
+					.style("font-size", "15px");
+				
+				newWindowRoot.append("div").append("h2")
+					.html("Table: "+table+", Attribute: "+attribute)
+					.style("color", "#000066");
+				
+				var newWindowChart = newWindowRoot.append("div");
 					
-					drawHistogram(newWindowRoot, attribute, resultRows);
-				}
+				drawHistogram(newWindowChart, attribute, resultRows);
 			}
-		});
+		}
+	});
 }
 
 function drawHistogram(newWindowRoot, attribute, data) {
+	var nr_bars = data.length;
+	var width_calculated = 25 * nr_bars;
+	
 	var margin = {top: 50, right: 150, bottom: 150, left: 150},
-		width = 1000 - margin.left - margin.right,
+		width = 300 + width_calculated - margin.left - margin.right,
 		height = 650 - margin.top - margin.bottom;
 
 	var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
@@ -786,6 +940,7 @@ function drawHistogram(newWindowRoot, attribute, data) {
 	var xAxis = d3.svg.axis()
 		.scale(x)
 		.orient("bottom");
+		
 	var yAxis = d3.svg.axis()
 		.scale(y)
 		.orient("left")
@@ -799,15 +954,8 @@ function drawHistogram(newWindowRoot, attribute, data) {
 				"translate(" + margin.left + "," + margin.top + ")");
 		
 	x.domain(data.map(function(d) { return d[0]; }));
-	//y.domain([0, d3.max(data, function(d) { return d[1]; })]);
-	y.domain([0, d3.sum(data, function(d) { return d[1]; })]);
-	
-	svg.append("text")
-        .attr("x", (width / 2))             
-        .attr("y", 0 - (margin.top / 4))
-        .attr("text-anchor", "middle")  
-        .style("font-size", "16px")  
-        .text(attribute);
+	y.domain([0, d3.max(data, function(d) { return d[1]; })]);
+	//y.domain([0, d3.sum(data, function(d) { return d[1]; })]);
 
 	svg.append("g")
 		.attr("class", "x axis")
@@ -826,133 +974,33 @@ function drawHistogram(newWindowRoot, attribute, data) {
 		.append("text")
 			.attr("transform", "rotate(-90)")
 			.attr("y", 6)
-			.attr("dy", "-70")
+			.attr("dy", "-80")
 			.style("text-anchor", "end")
 			.text("Occurences Of");
 
 	svg.selectAll("bar")
 		.data(data)
 		.enter().append("rect")
-			.style("fill", "red")
+			.style("fill", "steelblue")
 			.attr("x", function(d) { return x(d[0]); })
 			.attr("width", x.rangeBand())
 			.attr("y", function(d) { return y(d[1]); })
 			.attr("height", function(d) { return height - y(d[1]); });
-			
-	svg.selectAll("rect")
-        .append("text")
-        .attr("class", "barText")
-		.attr("x", function(d) { return x(d[0]); })
-        .attr("y", function(d) {
-            return y(d[1]) - 10;
-        })
-        .attr("text-anchor", "start")
-        .text(function(d) {
-			var percent = d[1] / d3.sum(data, function(d) { return d[1]; });
-			return "" + percent + "%";
-        });
 		
-	svg.selectAll("bar").append("title")
+	svg.selectAll("rect").append("title")
 		.text(function(d) {
-			var percent = d[1] / d3.sum(data, function(d) { return d[1]; });
-			return "" + percent + "%";
+			var percent = d[1] / d3.sum(data, function(d) { return d[1]; }) * 100;
+			return d[0]+": "+d[1]+" ("+formatNumber(percent) +"%)";
 		});
 }
 
-function drawStatisticalPieCharts() {
-	d3.xml("statistics.xml", "application/xml", function(xml) {
-		var statistics = xml.getElementsByTagName("statistics");
-		
-		for(var i = 0; i < statistics.length; i++) {
-			var stats = statistics[i].children;
-			for(var j = 0; j < stats.length; j++) {
-				var charts = stats[j];
-				if(charts.tagName == "pieCharts") {
-					var pieCharts = charts.children;
-					for(var l = 0; l < pieCharts.length; l++) {
-						var pieChart = pieCharts[l].children;
-						var chartname = pieChart[0].textContent;
-						var sourceFile = pieChart[4].textContent;
-						
-						drawPieChart(chartname, sourceFile);
-					}
-				}
-			}
-		}
-	});
+function formatNumber(number) {
+	return number.toLocaleString('de-DE');
 }
 
-function drawPieChart(chartname, sourceFile) {
-	d3.csv(sourceFile,
-		function(d) {
-			d.count = +d.count;
-			return d;
-		},
-		function(error, data) {
-			
-		if (error) throw error;
-		
-		var width = 600,
-			height = 600,
-			radius = Math.min(width, height) / 2;
-			
-		var values = [];
-		for(var n = 0; n < data.length; n++) {
-			values.push(data[n].count);
-		}
-		var total = values.reduce((a, b) => a + b, 0);
-		var density = getDensityRange(values);
-		var density_colors = d3.scale.linear()
-			.domain([density.min, density.max])
-			.range(["white", "mediumseagreen"]);
-
-		var arc = d3.svg.arc()
-			.outerRadius(radius - 70)
-			.innerRadius(0);
-
-		var labelArc = d3.svg.arc()
-			.outerRadius(radius - 40)
-			.innerRadius(radius - 40);
-
-		var pie = d3.layout.pie()
-			.sort(null)
-			.value(function(d) { return d.count; });
-			
-		d3.select("#charts").append("text")
-			.attr("x", 0)             
-			.attr("y", 0)
-			.attr("text-anchor", "middle")  
-			.style("font-size", "20px") 
-			.style("text-decoration", "underline")  
-			.text(chartname);
-
-		var svg = d3.select("#charts").append("svg")
-			.attr("width", width)
-			.attr("height", height)
-			.append("g")
-			.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
-
-		var g = svg.selectAll(".arc")
-			.data(pie(data))
-			.enter().append("g")
-			.attr("class", "arc");
-
-		g.append("path")
-			.attr("d", arc)
-			.style("stroke", "#fff")
-			.style("fill", function(d) { return density_colors(d.data.count); });
-
-		g.append("text")
-			.style("font", "10px sans-serif")
-			.style("text-anchor", "middle")
-			.attr("transform", function(d) { return "translate(" + labelArc.centroid(d) + ")"; })
-			.attr("dy", ".35em")
-			.text(function(d) { return d.data.col; });
-			
-		g.append("title").text(function(d) {
-			var percentage = d.data.count/total;
-			var nr = d.data.count.toLocaleString('de-DE');
-			return d.data.col+": "+nr+" ("+percentage.toLocaleString('de-DE')+"%)";
-		});
-	});
-}
+jQuery.fn.d3Click = function () {
+  this.each(function (i, e) {
+    var evt = new MouseEvent("click");
+    e.dispatchEvent(evt);
+  });
+};

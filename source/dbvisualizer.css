@@ -5,7 +5,7 @@ Author: Fiona Waser
 html {
 	font-family: Arial, Helvetica, sans-serif;
 	background-color: #fcfcfc;
-	font-size: 15px;
+	font-size: 12px;
 }
 
 h1 {
@@ -54,14 +54,76 @@ ul.nav li a:hover {
 }
 
 #content {
+	float: left;
 	width: 100%;
 	height: auto;
+}
+
+.help:before {
+    content: '?';
+    display: inline-block;
+    font-family: sans-serif;
+    font-weight: bold;
+    text-align: center;
+    width: 1.8ex;
+    height: 1.8ex;
+    font-size: 3ex;
+    line-height: 1.8ex;
+    border-radius: 1.2ex;
+    margin-right: 4px;
+    padding: 1px;
+    color: white;
+    background: black;
+    border: 1px solid black;
+    text-decoration: none;
+	float: right;
+}
+
+.help:hover:before {
+    color: black;
+    background: white;
+    border-color: black;
+    text-decoration: none;
+	cursor: help;
+}
+
+#helpPopup {
+	right: 0px;
+	padding: 5px;
+	margin-right: 25px;
+	margin-top: 15px;
+	display: none;
+    position: absolute;
+    border: 1px solid #000;
+    width: 400px;
+    height: 400px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 15px;
+	background-color: #fcfcfc;
+	color: black;
+}
+
+#structuralForm {
+	float: left;
 }
 
 #diagram {
 	float: left;
 	width: auto;
 	height: auto;
+}
+
+#legends {
+	float: left;
+	height: 200px;
+	width: 800px;
+}
+
+#query {
+	float: left;
+	width: 100%;
+	height: auto;
+	margin-bottom: 10px;
 }
 
 #rows {
@@ -84,13 +146,17 @@ ul.nav li a:hover {
 }
 
 div.histogramIcon {
-	background-image: url(img/histogram_img.ico);
-	width: 35px;
+	background-image: url(img/histogram_icon.ico);
+	width: 36px;
 	height: 24px;
 }
 
+div.histogramIcon:hover {
+	cursor: pointer;
+}
+
 table {
-	font-size: 15px;
+	font-size: 12px;
 }
 
 #setup > th, td {
@@ -114,4 +180,12 @@ th, td {
  
 #circle:hover path.fade {
 	display: none;
+}
+
+.grid .tick {
+    stroke: lightgrey;
+    opacity: 0.7;
+}
+.grid path {
+    stroke-width: 0;
 }

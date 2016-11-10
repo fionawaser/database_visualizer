@@ -184,7 +184,7 @@ function drawStructuralChordDiagram() {
 
 	var density_color_picker = d3.scale.linear()
 		.domain([0, tables.length-1])
-		.range(["#ffbf00", "#ff0000"]);
+		.range(["white", "black"]);
 		
 	var values_nr_rows_domain = [];
 	for(var n = 0; n < tables.length; n++) {
@@ -248,7 +248,7 @@ function drawStructuralChordDiagram() {
 	var groupPath = group.append("path")
 		.attr("id", function(d, i) { return "group" + i; })
 		.attr("d", arc)
-		.style("fill", function(d, i) { return density_colors(i); })
+		.style("fill", function(d, i) { return density_colors(parseFloat(tables[i].children[1].textContent)); })
 		.style("fill-opacity", ".5")
 		.style("stroke", "black")
 		.style("stroke-width", ".25px")

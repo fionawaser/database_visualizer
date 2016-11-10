@@ -99,7 +99,7 @@ function getAttributes($con, $tables) {
 				}
 				
 				if(isSqlTypNumber($row["Type"])) {
-					if(stripos($row["Field"], "price") !== FALSE) {
+					if(stripos($row["Field"], "price") !== FALSE || stripos($row["Field"], "cost") !== FALSE) {
 						$attribute->addAttribute("unit", "money");
 					} else if(stripos($row["Field"], "length") !== FALSE) {
 						$attribute->addAttribute("unit", "length");

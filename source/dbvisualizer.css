@@ -107,6 +107,11 @@ ul.nav li a:hover {
 	float: left;
 }
 
+#diagramTitle {
+	float: left;
+	width: 100%;
+}
+
 #diagram {
 	float: left;
 	width: auto;

@@ -52,16 +52,15 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		</form>
 	</div>
 	<div id="content">
-		<div id="diagram">
-			<h2>Tables</h2>
-		</div>
+		<div id="diagramTitle"><h2>Tables</h2></div>
+		<div id="diagram"></div>
 		<div id="rightSidebar">
 			<div id="sortChordDiagram">
 				<h3>Sort by:</h3>
 				<form action="" method="post">
-					<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onchange="drawStructuralChordDiagramInit();" checked> Alphabetical<br>
-					<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onchange="drawStructuralChordDiagramInit();"> Nr. Rows<br>
-					<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onchange="drawStructuralChordDiagramInit();"> Nr. Fields<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onchange="window.location.reload();" checked> Alphabetical<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onchange="window.location.reload();"> Nr. Rows<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onchange="window.location.reload();"> Nr. Fields<br>
 				</form>
 			</div>
 			<div id="attributeInfo"></div>

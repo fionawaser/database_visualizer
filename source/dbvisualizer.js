@@ -15,6 +15,7 @@ var chosenTables = [];
 var chosenAttributes = [];
 var chosenAttributeAggrFunctions = [];
 var chosenAttributesOrderBy = [];
+var histogramChosenValues = [];
 
 function prepareStructuralView() {
 	$("#helpParent").mouseover(function() {
@@ -78,6 +79,7 @@ function drawStructuralChordDiagramInit() {
 			chosenAttributes[i] = [];
 			chosenAttributeAggrFunctions[i] = [];
 			chosenAttributesOrderBy[i] = [];
+			histogramChosenValues[i] = [];
 				
 			var attributes = tables[i].children[2].children;
 			for(var k = 0; k < attributes.length; k++) {
@@ -86,6 +88,7 @@ function drawStructuralChordDiagramInit() {
 				chosenAttributes[i][k] = true;
 				chosenAttributeAggrFunctions[i][k] = "None";
 				chosenAttributesOrderBy[i][k] = "None";
+				histogramChosenValues[i][k] = undefined;
 			}
 				
 			constraintCardinalities[i] = [];
@@ -210,8 +213,8 @@ function drawStructuralChordDiagram() {
 		.range(values_nr_rows_range);
 	
 	var cardinality_colors = d3.scale.linear()
-		.domain([0, 1])
-		.range(["white", "steelblue"]);
+		.domain([0, 1, 1.01])
+		.range(["white", "darkblue", "red"]);
 			
 	var arc = d3.svg.arc()
 		.innerRadius(innerRadius)
@@ -283,8 +286,11 @@ function drawStructuralChordDiagram() {
 			setTableChosen(d.index);
 			
 			$(".group path").css("stroke-width", ".25px");
+			$(".group path").css("stroke", "black");
+			
 			for(var i = 0; i < chosenTables.length; i++) {
 				$(".group:eq("+chosenTables[i]+") path").css("stroke-width", "2.5px");
+				$(".group:eq("+chosenTables[i]+") path").css("stroke", "gold");
 			}
 			
 			showRows();
@@ -338,6 +344,60 @@ function drawStructuralChordDiagram() {
 			return references[d.source.index][d.target.index];
 		}
 	});
+	
+	/*var legends = d3.select("#legends").append("svg")
+		.attr("width", "800px")
+		.attr("height", "200px");
+		
+	var legend_nr_rows = legends.selectAll(".legend")
+		.data(density_color_picker.domain())
+		.enter().append("g")
+		.attr("class", "legend")
+		.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+	legend.append("rect")
+		.attr("x", 800 - 18)
+		.attr("width", 18)
+		.attr("height", 18)
+		.style("fill", function(i) { density_colors(i); });
+
+	legend.append("text")
+		.attr("x", 800 - 24)
+		.attr("y", 9)
+		.attr("dy", ".35em")
+		.style("text-anchor", "end")
+		.text(function(d) { return density_color_picker(d); });*/
+	
+	/*var defs = legends.append("defs");
+
+	var linearGradient = defs.append("linearGradient")
+		.attr("id", "linear-gradient");
+		
+	linearGradient
+		.attr("x1", "0%")
+		.attr("y1", "0%")
+		.attr("x2", "100%")
+		.attr("y2", "0%");
+		
+	linearGradient.append("stop") 
+		.attr("offset", "0%")   
+		.attr("stop-color", cardinality_colors(0));
+
+	linearGradient.append("stop") 
+		.attr("offset", "100%")   
+		.attr("stop-color", cardinality_colors(1));
+		
+	svg.append("rect")
+		.attr("width", 300)
+		.attr("height", 20)
+		.style("fill", "url(#linear-gradient)");
+		
+	linearGradient.selectAll("stop") 
+		.data( cardinality_colors.range() )                  
+		.enter().append("stop")
+		.attr("offset", function(d,i) { return i/(cardinality_colors.range().length-1); })
+		.attr("stop-color", function(d) { return d; });*/
+
 }
 
 function getDensityRange(values) {
@@ -431,6 +491,18 @@ function setChosenAttributesOrderBy(tableIndex, attributeIndex, order) {
 	chosenAttributesOrderBy[tableIndex][attributeIndex] = order;
 }
 
+function checkHistogramChosenValue(tableIndex, attributeIndex) {
+	if(histogramChosenValues[tableIndex][attributeIndex] == undefined) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+function setHistogramChosenValue(tableIndex, attributeIndex, value) {
+	histogramChosenValues[tableIndex][attributeIndex] = value;
+}
+
 function showAttributeInfo(index) {
 	clearElement("#attributeInfo");
 	
@@ -505,7 +577,7 @@ function showAttributeInfo(index) {
 		
 		var histogramChooser = "";
 		if(cardinalityLow) {
-			histogramChooser = "<div onclick='prepareHistogram(&quot;"+tablename+"&quot;, &quot;"+field+"&quot;);' class='histogramIcon'>&nbsp;</div>";
+			histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+");' class='histogramIcon'>&nbsp;</div>";
 		}
 		
 		content += "<tr>"+choserContent+"<td>"+field+""+histogramChooser+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+unit+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+aggFunctionsHtml+"</td><td>"+choserContentOrder+"</td></tr>";
@@ -551,6 +623,17 @@ function showRows() {
 			}
 		}
 		
+		var histogramChosenValuesEmpty = true;
+		for(var i = 0; i < histogramChosenValues.length; i++) {
+			for(var j = 0; j < histogramChosenValues[i].length; j++) {
+				if(checkHistogramChosenValue(i, j)) {
+					histogramChosenValuesEmpty = false;
+					
+					break;
+				}
+			}
+		}
+		
 		var flagAll = false;
 		if(chosenAttributesAll && chosenAttributeAggrFunctionsEmpty) {
 			flagAll = true;
@@ -565,6 +648,8 @@ function showRows() {
 		var joinsVisual = "<span class='queryControlWords'>ON</span> ";
 		var order = "ORDER BY ";
 		var orderVisual = "<span class='queryControlWords'>ORDER BY</span> ";
+		var where = "WHERE ";
+		var whereVisual = "<span class='queryControlWords'>WHERE</span> ";
 		
 		if(chosenTables.length == 1) {
 			var index = chosenTables[0];
@@ -605,6 +690,27 @@ function showRows() {
 				}
 				order = order.substring(0, order.length-2);
 				orderVisual = orderVisual.substring(0, orderVisual.length-2);
+			}
+			
+			if(histogramChosenValuesEmpty) {
+				where = "";
+				whereVisual = "";
+			} else {
+				var attributes = table.children[2].children;
+				for(var p = 0; p < attributes.length; p++) {
+					if(checkHistogramChosenValue(index, p)) {
+						var type = attributes[p].children[1].textContent;
+						if(isSqlTypNumber(type)) {
+							where += attributes[p].firstChild.textContent+" = "+histogramChosenValues[index][p]+" AND ";
+							whereVisual += attributes[p].firstChild.textContent+" = "+histogramChosenValues[index][p]+" AND ";
+						} else {
+							where += attributes[p].firstChild.textContent+" = '"+histogramChosenValues[index][p]+"' AND ";
+							whereVisual += attributes[p].firstChild.textContent+" = '"+histogramChosenValues[index][p]+"' AND ";
+						}
+					}
+				}
+				where = where.substring(0, where.length-5);
+				whereVisual = whereVisual.substring(0, whereVisual.length-5);
 			}
 		} else if(chosenTables.length > 1) {
 			for(var i = 0; i < chosenTables.length; i++) {
@@ -687,8 +793,27 @@ function showRows() {
 							var attributes = table.children[2].children;
 							for(var p = 0; p < attributes.length; p++) {
 								if(checkChosenAttributesOrderBy(j, p)) {
-									order += pathAliases[i]+"."+attributes[p].firstChild.textContent+" "+chosenAttributesOrderBy[index][p]+", ";
-									orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" <span class='queryControlWords'>"+chosenAttributesOrderBy[index][p]+"</span>, ";
+									order += pathAliases[i]+"."+attributes[p].firstChild.textContent+" "+chosenAttributesOrderBy[j][p]+", ";
+									orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" <span class='queryControlWords'>"+chosenAttributesOrderBy[j][p]+"</span>, ";
+								}
+							}
+						}
+						
+						if(histogramChosenValuesEmpty) {
+							where = "";
+							whereVisual = "";
+						} else {
+							var attributes = table.children[2].children;
+							for(var p = 0; p < attributes.length; p++) {
+								if(checkHistogramChosenValue(j, p)) {
+									var type = attributes[p].children[1].textContent;
+									if(isSqlTypNumber(type)) {
+										where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[j][p]+" AND ";
+										whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[j][p]+" AND ";
+									} else {
+										where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[j][p]+"' AND ";
+										whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[j][p]+"' AND ";
+									}
 								}
 							}
 						}
@@ -726,12 +851,12 @@ function showRows() {
 									} else {
 										var attributes = table.children[2].children;
 										for(var p = 0; p < attributes.length; p++) {
-											if(checkAttributeChosen(j, p) && checkAggrFunctionChosen(j, p)) {
-												attributesQuery += chosenAttributeAggrFunctions[j][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
-											} else if(checkAttributeChosen(j, p)) {
+											if(checkAttributeChosen(l, p) && checkAggrFunctionChosen(l, p)) {
+												attributesQuery += chosenAttributeAggrFunctions[l][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
+											} else if(checkAttributeChosen(l, p)) {
 												attributesQuery += pathAliases[i]+"."+attributes[p].firstChild.textContent+", ";
-											} else if(checkAggrFunctionChosen(j, p)) {
-												attributesQuery += chosenAttributeAggrFunctions[j][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
+											} else if(checkAggrFunctionChosen(l, p)) {
+												attributesQuery += chosenAttributeAggrFunctions[l][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
 											}
 										}
 									}
@@ -742,9 +867,28 @@ function showRows() {
 									} else {
 										var attributes = table.children[2].children;
 										for(var p = 0; p < attributes.length; p++) {
-											if(checkChosenAttributesOrderBy(j, p)) {
-												order += pathAliases[i]+"."+attributes[p].firstChild.textContent+" "+chosenAttributesOrderBy[index][p]+", ";
-												orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" <span class='queryControlWords'>"+chosenAttributesOrderBy[index][p]+"</span>, ";
+											if(checkChosenAttributesOrderBy(l, p)) {
+												order += pathAliases[i]+"."+attributes[p].firstChild.textContent+" "+chosenAttributesOrderBy[l][p]+", ";
+												orderVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" <span class='queryControlWords'>"+chosenAttributesOrderBy[l][p]+"</span>, ";
+											}
+										}
+									}
+									
+									if(histogramChosenValuesEmpty) {
+										where = "";
+										whereVisual = "";
+									} else {
+										var attributes = table.children[2].children;
+										for(var p = 0; p < attributes.length; p++) {
+											if(checkHistogramChosenValue(l, p)) {
+												var type = attributes[p].children[1].textContent;
+												if(isSqlTypNumber(type)) {
+													where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[l][p]+" AND ";
+													whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[l][p]+" AND ";
+												} else {
+													where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[l][p]+"' AND ";
+													whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[l][p]+"' AND ";
+												}
 											}
 										}
 									}
@@ -791,12 +935,17 @@ function showRows() {
 				order = order.substring(0, order.length-2);
 				orderVisual = orderVisual.substring(0, orderVisual.length-2);
 			}
+			
+			if(!histogramChosenValuesEmpty) {
+				where = where.substring(0, where.length-5);
+				whereVisual = whereVisual.substring(0, whereVisual.length-5);
+			}
 		}
 		
 		var limit = document.getElementById('limit').value;
 		
-		var query = "SELECT "+attributesQuery+" FROM "+tablesQuery+" "+joins+" "+order+" LIMIT "+limit;
-		var queryVisual = "<span class='queryControlWords'>SELECT</span> "+attributesQuery+" <span class='queryControlWords'>FROM</span> "+tablesQueryVisual+" "+joinsVisual+" "+orderVisual+" <span class='queryControlWords'>LIMIT</span> "+limit;
+		var query = "SELECT "+attributesQuery+" FROM "+tablesQuery+" "+joins+" "+where+" "+order+" LIMIT "+limit;
+		var queryVisual = "<span class='queryControlWords'>SELECT</span> "+attributesQuery+" <span class='queryControlWords'>FROM</span> "+tablesQueryVisual+" "+joinsVisual+" "+whereVisual+" "+orderVisual+" <span class='queryControlWords'>LIMIT</span> "+limit;
 		
 		var queryDivContent = "<h2>Query</h2>"+queryVisual;
 		document.getElementById("query").innerHTML = queryDivContent;
@@ -840,7 +989,7 @@ function showRows() {
 														cardinalityLow = true;
 													}
 													if(cardinalityLow) {
-														tableHeader += " <div onclick='prepareHistogram(&quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;);' class='histogramIcon'>&nbsp;</div>";
+														tableHeader += " <div onclick='prepareHistogram("+j+", &quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;, "+l+");' class='histogramIcon'>&nbsp;</div>";
 													}
 												}
 											}
@@ -891,7 +1040,7 @@ function getOrderByFunctions() {
 	return ["None", "ASC", "DESC"];
 }
 
-function prepareHistogram(table, attribute) {
+function prepareHistogram(tableId, table, attribute, attributeId) {
 	var query = "SELECT "+attribute+", COUNT("+attribute+") FROM "+table+" GROUP BY "+attribute;
 	
 	var resultRows = "";			
@@ -905,10 +1054,24 @@ function prepareHistogram(table, attribute) {
 			if(!('error' in obj) ) {
 				resultRows = obj.result;
 								
-				var heightNewWindow = ($(document).height())-600;
-				var widthNewWindow = ($(document).width())-600;
+				var widthNewWindow = (window.innerWidth)*3/4;
+				var heightNewWindow = (window.innerHeight)*8/9;
 				
 				var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
+				
+				newWindow.onunload = function() {
+					for(var i = 0; i < tables.length; i++) {
+						histogramChosenValues[i] = [];
+							
+						var attributes = tables[i].children[2].children;
+						for(var k = 0; k < attributes.length; k++) {
+							histogramChosenValues[i][k] = undefined;
+						}
+					}
+					
+					showRows();
+				};
+				
 				var newWindowRoot = d3.select(newWindow.document.body)
 					.style("font-family", "Arial, Helvetica, sans-serif")
 					.style("background-color", "#fcfcfc")
@@ -920,13 +1083,13 @@ function prepareHistogram(table, attribute) {
 				
 				var newWindowChart = newWindowRoot.append("div");
 					
-				drawHistogram(newWindowChart, attribute, resultRows);
+				drawHistogram(newWindowChart, tableId, attributeId, resultRows);
 			}
 		}
 	});
 }
 
-function drawHistogram(newWindowRoot, attribute, data) {
+function drawHistogram(newWindowRoot, tableId, attributeId, data) {
 	var nr_bars = data.length;
 	var width_calculated = 25 * nr_bars;
 	
@@ -985,7 +1148,16 @@ function drawHistogram(newWindowRoot, attribute, data) {
 			.attr("x", function(d) { return x(d[0]); })
 			.attr("width", x.rangeBand())
 			.attr("y", function(d) { return y(d[1]); })
-			.attr("height", function(d) { return height - y(d[1]); });
+			.attr("height", function(d) { return height - y(d[1]); })
+			.on("click", function(d) {
+				if(checkHistogramChosenValue(tableId, attributeId)) {
+					setHistogramChosenValue(tableId, attributeId, undefined);
+				} else {
+					setHistogramChosenValue(tableId, attributeId, d[0]);
+				}
+				
+				showRows();
+			});
 		
 	svg.selectAll("rect").append("title")
 		.text(function(d) {
@@ -996,6 +1168,26 @@ function drawHistogram(newWindowRoot, attribute, data) {
 
 function formatNumber(number) {
 	return number.toLocaleString('de-DE');
+}
+
+function isSqlTypNumber(type) {
+	var list = [];
+	list.push("int");
+	list.push("dec");
+	list.push("numeric");
+	list.push("fixed");
+	list.push("float");
+	list.push("double");
+	list.push("bit");
+	list.push("real");
+	
+	for(var i = 0; i < list.length; i++) {
+		if(type.indexOf(list[i]) > -1) {
+			return true;
+		}
+	}
+	
+	return false;
 }
 
 jQuery.fn.d3Click = function () {

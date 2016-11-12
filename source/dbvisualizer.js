@@ -172,7 +172,9 @@ function confirmRefreshRowRelatedInfo() {
 function drawStructuralChordDiagram() {
 	clearElement("#diagram");
 	
-	var width = 800,
+	var windowWidth = $(window).width()/2-20;
+	
+	var width = windowWidth,
 		height = 800,
 		outerRadius = Math.min(width, height) / 2 - 50,
 		innerRadius = outerRadius - 62;
@@ -505,15 +507,13 @@ function setHistogramChosenValue(tableIndex, attributeIndex, value) {
 
 function showAttributeInfo(index) {
 	clearElement("#attributeInfo");
-	
-	var fullRectWidth = 200;
 				
 	var table = tables[index];
 	var tablename = table.firstChild.textContent;
 	
 	var attributes = table.children[2].children;
 	
-	var content = "<p><h2>Attributes: "+tablename+"</h2>";
+	var content = "<p><h2>"+tablename+"</h2>";
 	content += "<table id='attributesTable'>";
 	
 	var chooseAllAttributes = "<input type='checkbox' id='attributeChooserAll' name='attributeChooserAll' onclick='toggleAllAttributes(this);' checked='checked'>";
@@ -544,16 +544,17 @@ function showAttributeInfo(index) {
 		var cardinalityLow = false;
 		var percent = attributeCardinalitiesPercentages[index][j]*100;
 		if(attributeCardinalities[index][j] <= 50) {
-			cardinalityInfo = "low ("+attributeCardinalities[index][j]+" - "+formatNumber(percent)+"%)";
+			cardinalityInfo = "low ("+formatNumber(attributeCardinalities[index][j])+" - "+formatNumber(percent)+"%)";
 			if(key != "PRI") {
 				cardinalityLow = true;
 			}
 		} else if(attributeCardinalitiesPercentages[index][j] == 1) {
-			cardinalityInfo = "high ("+attributeCardinalities[index][j]+" - "+formatNumber(percent)+"%)";
+			cardinalityInfo = "high ("+formatNumber(attributeCardinalities[index][j])+" - "+formatNumber(percent)+"%)";
 		} else {
-			cardinalityInfo = "high ("+attributeCardinalities[index][j]+" - "+formatNumber(percent)+"%)";
+			cardinalityInfo = "high ("+formatNumber(attributeCardinalities[index][j])+" - "+formatNumber(percent)+"%)";
 		}
 		
+		var fullRectWidth = 150;
 		var rowHeight = 20;
 		var barWidth = fullRectWidth * attributeCardinalitiesPercentages[index][j];
 		var svg = "<svg width='"+fullRectWidth+"' height='"+rowHeight+"'><rect width='"+barWidth+"' height='"+rowHeight+"' style='fill: steelblue;' /></svg>";

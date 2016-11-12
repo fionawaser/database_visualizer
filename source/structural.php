@@ -40,29 +40,34 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		<li><a href="structural.php" class="active">Structural Information</a></li>
 		<li><a href="search.php">Content Information - Search</a></li>
 	</ul> 
-	<h3>Database: <?php print($dbn); ?>, Number of Tables: <?php print($nr_tables); ?>
+	<div id="topbarLeft">
+		<div id="infobar">
+			<h3>Database: <?php print($dbn); ?>, Number of Tables: <?php print($nr_tables); ?></h3>
+			<div id="diagramTitle"><h2>Tables</h2></div>
+		</div>
+		<div id="structuralForm">
+			<form id="refreshInfosForm" name="refreshInfosForm" action="" method="post">
+				<input type="hidden" name="refreshConfirmation" id="refreshConfirmation" value="">
+				<input type="submit" name="refreshRowInfo" value="Refresh Row-Related Information" onclick="confirmRefreshRowRelatedInfo();">
+			</form>
+		</div>
+	</div>
+	<div id="topbarRight">
 		<div id="helpParent" class="help">
 			<div id="helpPopup" style="display: none">Some helpful things!</div>
 		</div>
-	</h3>
-	<div id="structuralForm">
-		<form id="refreshInfosForm" name="refreshInfosForm" action="" method="post">
-			<input type="hidden" name="refreshConfirmation" id="refreshConfirmation" value="">
-			<input type="submit" name="refreshRowInfo" value="Refresh Row-Related Infos" onclick="confirmRefreshRowRelatedInfo();">
-		</form>
+		<div id="sortChordDiagram">
+			<span style="font-size: 12px; font-weight: bold; color: #000066;">Sort by:</span><br/>
+			<form action="" method="post">
+				<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onclick="window.location.reload();" checked> Alphabetical<br>
+				<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onclick="window.location.reload();"> Nr. Rows<br>
+				<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onclick="window.location.reload();"> Nr. Fields<br>
+			</form>
+		</div>
 	</div>
 	<div id="content">
-		<div id="diagramTitle"><h2>Tables</h2></div>
 		<div id="diagram"></div>
 		<div id="rightSidebar">
-			<div id="sortChordDiagram">
-				<h3>Sort by:</h3>
-				<form action="" method="post">
-					<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onclick="window.location.reload();" checked> Alphabetical<br>
-					<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onclick="window.location.reload();"> Nr. Rows<br>
-					<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onclick="window.location.reload();"> Nr. Fields<br>
-				</form>
-			</div>
 			<div id="attributeInfo"></div>
 		</div>
 		<div id="legends"></div>

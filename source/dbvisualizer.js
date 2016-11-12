@@ -515,7 +515,10 @@ function showAttributeInfo(index) {
 	
 	var content = "<p><h2>Attributes: "+tablename+"</h2>";
 	content += "<table id='attributesTable'>";
-	content += "<tr><th></th><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th><th>Unit</th><th>Cardinality</th><th>AggFunction</th><th>OrderBy</th></tr>";
+	
+	var chooseAllAttributes = "<input type='checkbox' id='attributeChooserAll' name='attributeChooserAll' onclick='toggleAllAttributes(this);' checked='checked'>";
+	
+	content += "<tr><th>"+chooseAllAttributes+"</th><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th><th>Unit</th><th>Cardinality</th><th></th><th>AggFunction</th><th>OrderBy</th></tr>";
 	
 	var aggregateFunctions = getAggregateFunctions();
 	var orderByFunctions = getOrderByFunctions();
@@ -555,21 +558,21 @@ function showAttributeInfo(index) {
 		var barWidth = fullRectWidth * attributeCardinalitiesPercentages[index][j];
 		var svg = "<svg width='"+fullRectWidth+"' height='"+rowHeight+"'><rect width='"+barWidth+"' height='"+rowHeight+"' style='fill: steelblue;' /></svg>";
 		
-		var choserContent = "<td onclick='setAttributeChosen("+index+", "+j+");'>";
+		var choserContent = "<td>";
 		if(checkAttributeChosen(index, j)) {
-			choserContent += "<input type='checkbox' name='"+field+"' value='"+field+"' onchange='showRows();' checked='checked'>";
+			choserContent += "<input type='checkbox' name='attributeChooser_"+index+"_"+j+"' class='attributeChooserClass' value='"+field+"' onclick='toggleOneAttribute(this); setAttributeChosen("+index+", "+j+"); showRows();' checked='checked'>";
 		} else {
-			choserContent += "<input type='checkbox' name='"+field+"' value='"+field+"' onchange='showRows();'>";
+			choserContent += "<input type='checkbox' name='attributeChooser_"+index+"_"+j+"' class='attributeChooserClass' value='"+field+"' onclick='toggleOneAttribute(this); setAttributeChosen("+index+", "+j+"); showRows();'>";
 		}
 		choserContent += "</td>";
 		
-		var aggFunctionsHtml = "<select name='chooseAggFunctions' onchange='setAggrFunctionChosen("+index+", "+j+", this.value); showRows();'>";
+		var aggFunctionsHtml = "<select name='chooseAggFunctions' onclick='setAggrFunctionChosen("+index+", "+j+", this.value); showRows();'>";
 		for(var i = 0; i < aggregateFunctions.length; i++) {
 			aggFunctionsHtml += "<option value='"+aggregateFunctions[i]+"'>"+aggregateFunctions[i]+"</option>";
 		}
 		aggFunctionsHtml += "</select>";
 		
-		var choserContentOrder = "<select name='chooseOrderByFunctions' onchange='setChosenAttributesOrderBy("+index+", "+j+", this.value); showRows();'>";
+		var choserContentOrder = "<select name='chooseOrderByFunctions' onclick='setChosenAttributesOrderBy("+index+", "+j+", this.value); showRows();'>";
 		for(var i = 0; i < orderByFunctions.length; i++) {
 			choserContentOrder += "<option value='"+orderByFunctions[i]+"'>"+orderByFunctions[i]+"</option>";
 		}
@@ -580,12 +583,65 @@ function showAttributeInfo(index) {
 			histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+");' class='histogramIcon'>&nbsp;</div>";
 		}
 		
-		content += "<tr>"+choserContent+"<td>"+field+""+histogramChooser+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+unit+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+aggFunctionsHtml+"</td><td>"+choserContentOrder+"</td></tr>";
+		content += "<tr>"+choserContent+"<td>"+field+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+unit+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+histogramChooser+"</td><td>"+aggFunctionsHtml+"</td><td>"+choserContentOrder+"</td></tr>";
 	}
 	
 	content += "</table></p>";
 
 	document.getElementById("attributeInfo").innerHTML = content;
+}
+
+function toggleAllAttributes(source) {
+	var attributesBoxes = document.getElementsByClassName("attributeChooserClass");
+	
+	var allChecked = true;
+	for(var i = 0; i < attributesBoxes.length; i++) {
+		if(!attributesBoxes[i].checked) {
+			allChecked = false;
+		}
+	}
+	
+	if(allChecked) {
+		if(source.checked) {
+			for(var i = 0; i < attributesBoxes.length; i++) {
+				attributesBoxes[i].checked = true;
+			}
+		} else {
+			for(var i = 0; i < attributesBoxes.length; i++) {
+				attributesBoxes[i].checked = false;
+			}
+		}
+	} else {
+		if(source.checked) {
+			for(var i = 0; i < attributesBoxes.length; i++) {
+				attributesBoxes[i].checked = true;
+			}
+		}
+	}
+	
+	showRows();
+}
+
+function toggleOneAttribute(source) {
+	var allBox = document.getElementById("attributeChooserAll");
+	
+	if(!source.checked) {
+		allBox.checked = false;
+	} else {
+		var attributesBoxes = document.getElementsByClassName("attributeChooserClass");
+		var allChecked = true;
+		for(var i = 0; i < attributesBoxes.length; i++) {
+			if(!attributesBoxes[i].checked) {
+				allChecked = false;
+			}
+		}
+		
+		if(allChecked) {
+			allBox.checked = true;
+		} else {
+			allBox.checked = false;
+		}
+	}
 }
 
 function showRows() {
@@ -974,7 +1030,31 @@ function showRows() {
 
 								var tableHeader = "";
 								for(var i = 0; i < resultHeader.length; i++) {
-									tableHeader += "<th>"+resultHeader[i].name;
+									tableHeader += "<th style='cursor: pointer;' onclick='sortShowRows(&quot;"+resultHeader[i].orgtable+"&quot;, &quot;"+resultHeader[i].orgname+"&quot;);'><div id='tableHeaderCellContent' style='height: 24px;'><div id='tableHeaderCellText' style='float: left; height: 24px;'>"+resultHeader[i].name+"</div>";
+									
+									var tIndex = 0;
+									var aIndex = 0;
+									for(var l = 0; l < tables.length; l++) {
+										var tname = tables[l].firstChild.textContent;
+										if(tname == resultHeader[i].orgtable) {
+											var attributes = tables[l].children[2].children;
+											for(var j = 0; j < attributes.length; j++) {
+												var aname = attributes[j].firstChild.textContent;
+												if(aname == resultHeader[i].orgname) {
+													tIndex = l;
+													aIndex = j;
+												}
+											}
+										}
+									}
+									
+									if(chosenAttributesOrderBy[tIndex][aIndex] == "None") {
+										tableHeader += " <div id='sortIconRowsHeader' style='float: left; width: 14px; height: 24px;'>&nbsp;</div>";
+									} else if(chosenAttributesOrderBy[tIndex][aIndex] == "ASC") {
+										tableHeader += " <div id='sortIconRowsHeader' style='float: left; width: 14px; height: 24px;'>&#9650;</div>";
+									} else if(chosenAttributesOrderBy[tIndex][aIndex] == "DESC") {
+										tableHeader += " <div id='sortIconRowsHeader' style='float: left; width: 14px; height: 24px;'>&#9660;</div>";
+									}
 									
 									for(var j = 0; j < tables.length; j++) {
 										var tablename = tables[j].firstChild.textContent;
@@ -996,7 +1076,7 @@ function showRows() {
 										}
 									}
 									
-									tableHeader += "</th>";
+									tableHeader += "</div></th>";
 								}
 											
 								var rows = "";
@@ -1008,23 +1088,46 @@ function showRows() {
 									rows += "</tr>";
 								}
 											
-								var content = "<p><table><tr>"+tableHeader+"</tr>"+rows+"</table></p>";
+								var content = "<p><table style='table-layout: fixed;'><tr>"+tableHeader+"</tr>"+rows+"</table></p>";
 								document.getElementById("rowsTable").innerHTML = content;
 							}
-						},
-						error: function (request, status, error) {
-							console.log(error);
 						}
 					});
 				}
-			},
-			error: function (request, status, error) {
-				console.log(error);
 			}
 		});
 	} else {
 		document.getElementById("query").innerHTML = "";
 	}
+}
+
+function sortShowRows(tablename, attributename) {
+	var tIndex = 0;
+	var aIndex = 0;
+	
+	for(var i = 0; i < tables.length; i++) {
+		var tname = tables[i].firstChild.textContent;
+		if(tname == tablename) {
+			var attributes = tables[i].children[2].children;
+			for(var j = 0; j < attributes.length; j++) {
+				var aname = attributes[j].firstChild.textContent;
+				if(aname == attributename) {
+					tIndex = i;
+					aIndex = j;
+					
+					if(chosenAttributesOrderBy[i][j] == "None") {
+						chosenAttributesOrderBy[i][j] = "ASC";
+					} else if(chosenAttributesOrderBy[i][j] == "ASC") {
+						chosenAttributesOrderBy[i][j] = "DESC";
+					} else if(chosenAttributesOrderBy[i][j] == "DESC") {
+						chosenAttributesOrderBy[i][j] = "None";
+					}
+				}
+			}
+		}
+	}
+	
+	showRows();
 }
 
 function clearElement(name) {

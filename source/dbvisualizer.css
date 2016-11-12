@@ -154,6 +154,7 @@ div.histogramIcon {
 	background-image: url(img/histogram_icon.ico);
 	width: 36px;
 	height: 24px;
+	float: left;
 }
 
 div.histogramIcon:hover {

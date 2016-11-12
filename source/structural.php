@@ -58,9 +58,9 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 			<div id="sortChordDiagram">
 				<h3>Sort by:</h3>
 				<form action="" method="post">
-					<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onchange="window.location.reload();" checked> Alphabetical<br>
-					<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onchange="window.location.reload();"> Nr. Rows<br>
-					<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onchange="window.location.reload();"> Nr. Fields<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onclick="window.location.reload();" checked> Alphabetical<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onclick="window.location.reload();"> Nr. Rows<br>
+					<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onclick="window.location.reload();"> Nr. Fields<br>
 				</form>
 			</div>
 			<div id="attributeInfo"></div>
@@ -69,7 +69,7 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		<div id="rows">
 			<h2>Rows</h2>
 			<div id="rowsConfig">
-				<p>Number of rows: <input type="number" name="limit" id="limit" value="10" onchange="showRows();"/></p>
+				<p>Number of rows: <input type="number" name="limit" id="limit" value="10" onclick="showRows();"/></p>
 			</div>
 			<div id="query"></div>
 			<div id="rowsTable"></div>

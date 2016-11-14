@@ -37,8 +37,8 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 	<h1>Database Visualizer</h1>
 	<ul class="nav">
 		<li><a href="index.php">Welcome Page</a></li>
-		<li><a href="structural.php" class="active">Structural Information</a></li>
-		<li><a href="search.php">Content Information - Search</a></li>
+		<li><a href="visualization.php" class="active">Visualization</a></li>
+		<li><a href="search.php">Search</a></li>
 	</ul> 
 	<div id="topbarLeft">
 		<div id="infobar">
@@ -54,7 +54,7 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 	</div>
 	<div id="topbarRight">
 		<div id="helpParent" class="help">
-			<div id="helpPopup" style="display: none">Some helpful things!</div>
+			<div id="helpPopup" style="display: none"></div>
 		</div>
 		<div id="sortChordDiagram">
 			<span style="font-size: 12px; font-weight: bold; color: #000066;">Sort by:</span><br/>
@@ -71,14 +71,14 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 			<div id="legends"></div>
 		</div>
 		<div id="rightSidebar">
-			<div id="attributeInfo"></div>
+			<div id="attributeInfo"><span style="margin-right: 150px;">Go with your mouse pointer over a table to see information about its attributes.</span></div>
 		</div>
 		<div id="rows">
 			<h2>Rows</h2>
 			<div id="rowsConfig">
 				<p>Number of rows: <input type="number" name="limit" id="limit" value="10" onclick="showRows();"/></p>
 			</div>
-			<div id="query"></div>
+			<div id="query"><p>Choose some tables to create a SELECT statement.</p></div>
 			<div id="rowsTable"></div>
 		</div>
 	</div>

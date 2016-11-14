@@ -28,8 +28,8 @@ $tables = simplexml_load_file("tables.xml");
 	<h1>Database Visualizer</h1>
 	<ul class="nav">
 		<li><a href="index.php">Welcome Page</a></li>
-		<li><a href="structural.php">Structural Information</a></li>
-		<li><a href="search.php" class="active">Content Information - Search</a></li>
+		<li><a href="visualization.php">Visualization</a></li>
+		<li><a href="search.php" class="active">Search</a></li>
 	</ul>
 	<div id="searchInterface">
 		<h2>Search</h2>

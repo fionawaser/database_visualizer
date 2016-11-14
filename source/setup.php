@@ -69,7 +69,7 @@ Author: Fiona Waser
 				<p><input name="submit_info" type="submit" value="Ready"></p>
 			</form>
 			
-			<p><b>Important: </b> The database user needs SELECT privileges to Information_Schema and the chosen database.</p>
+			<p><b>Important: </b> The database user needs SELECT privileges on Information_Schema and the chosen database.</p>
 			<?php
 			}
 			?>

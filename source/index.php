@@ -13,8 +13,8 @@ Author: Fiona Waser
 		
 		<ul class="nav">
 			<li><a href="index.php" class="active">Welcome Page</a></li>
-			<li><a href="structural.php">Structural Information</a></li>
-			<li><a href="search.php">Content Information - Search</a></li>
+			<li><a href="visualization.php">Visualization</a></li>
+			<li><a href="search.php">Search</a></li>
 		</ul> 
 		
 		<p>What do you want to do?</p>

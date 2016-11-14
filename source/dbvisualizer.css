@@ -113,8 +113,8 @@ ul.nav li a:hover {
 #helpPopup {
 	right: 0px;
 	padding: 5px;
-	margin-right: 25px;
-	margin-top: 15px;
+	margin-right: 22px;
+	margin-top: 20px;
 	display: none;
     position: absolute;
     border: 1px solid #000;
@@ -172,7 +172,7 @@ ul.nav li a:hover {
 }
 
 #rightSidebar {
-	float: right;
+	float: left;
 	height: auto;
 	width: 50%;
 }

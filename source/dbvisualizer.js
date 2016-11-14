@@ -367,7 +367,7 @@ function drawStructuralChordDiagram() {
 	var gradientWidth = 250;
 	var gradientHeight = 20;
 	var gradientYMin = 30;
-	var gradientNrRowsXMin = diagramWidth/2-(gradientWidth/2);
+	var gradientXMin = diagramWidth/2-(gradientWidth/2);
 	var gradientNrRowsYMin = 100;
 
 	var defsLeft = legends.append("defs");
@@ -382,13 +382,13 @@ function drawStructuralChordDiagram() {
 		.attr("y2", 0);
 		
 	linearGradientLeft.append("stop") 
-		.attr("x", gradientNrRowsXMin)
-		.attr("y", gradientYMin)
+		.attr("x", 0)
+		.attr("y", gradientWidth/2)
 		.attr("stop-color", cardinality_colors(0));
 
 	linearGradientLeft.append("stop") 
-		.attr("x", gradientNrRowsXMin+gradientWidth/2)
-		.attr("y", gradientYMin)  
+		.attr("x", gradientWidth/2)
+		.attr("y", 0)
 		.attr("stop-color", cardinality_colors(1));
 		
 	var legendTitle = ["LegendTitle"];
@@ -398,7 +398,7 @@ function drawStructuralChordDiagram() {
 		.enter().append("g");
 		
 	legendBar.append("text")
-		.attr("x", gradientNrRowsXMin+gradientWidth/2)
+		.attr("x", gradientXMin+gradientWidth/2)
 		.attr("y", gradientYMin-5)
 		.attr("width", gradientWidth/2)
 		.attr("height", 10)
@@ -406,7 +406,7 @@ function drawStructuralChordDiagram() {
 		.text(function(d) { return "Contraint Cardinality"; });
 		
 	legendBar.append("text")
-		.attr("x", gradientNrRowsXMin+gradientWidth/2)
+		.attr("x", gradientXMin+gradientWidth/2)
 		.attr("y", gradientNrRowsYMin-5)
 		.attr("width", gradientWidth/2)
 		.attr("height", 10)
@@ -414,14 +414,14 @@ function drawStructuralChordDiagram() {
 		.text(function(d) { return "Nr. Rows"; });
 			
 	legendBar.append("rect")
-		.attr("x", gradientNrRowsXMin)
+		.attr("x", gradientXMin)
 		.attr("y", gradientYMin)  
 		.attr("width", gradientWidth/2)
 		.attr("height", gradientHeight)
 		.style("fill", "url(#linearGradientLeft)");
 		
 	legendBar.append("text")
-		.attr("x", gradientNrRowsXMin)
+		.attr("x", gradientXMin)
 		.attr("y", gradientYMin+gradientHeight+15)
 		.attr("width", gradientWidth/2)
 		.attr("height", 10)
@@ -429,7 +429,7 @@ function drawStructuralChordDiagram() {
 		.text(function(d) { return "0%"; });
 		
 	legendBar.append("text")
-		.attr("x", gradientNrRowsXMin+gradientWidth/2)
+		.attr("x", gradientXMin+gradientWidth/2)
 		.attr("y", gradientYMin+gradientHeight+15)
 		.attr("width", gradientWidth/2)
 		.attr("height", 10)
@@ -437,18 +437,12 @@ function drawStructuralChordDiagram() {
 		.text(function(d) { return "100%"; });
 		
 	legendBar.append("text")
-		.attr("x", gradientNrRowsXMin+gradientWidth)
+		.attr("x", gradientXMin+gradientWidth)
 		.attr("y", gradientYMin+gradientHeight+15)
 		.attr("width", gradientWidth/2)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
 		.text(function(d) { return "200%"; });
-		
-	linearGradientLeft.selectAll("stop") 
-		.data(["white", "darkblue"])                  
-		.enter().append("stop")
-		.attr("offset", function(d,i) { return i/(["white", "darkblue"].length-1); })
-		.attr("stop-color", function(d) { return d; });
 		
 	var defsRight = legends.append("defs");
 		
@@ -458,17 +452,17 @@ function drawStructuralChordDiagram() {
 	linearGradientRight
 		.attr("x1", 0)
 		.attr("y1", 0)
-		.attr("x2", gradientWidth)
+		.attr("x2", gradientWidth/2)
 		.attr("y2", 0);
 		
 	linearGradientRight.append("stop") 
-		.attr("x", diagramWidth/2)
-		.attr("y", gradientYMin)
-		.attr("stop-color", cardinality_colors(1.01));
+		.attr("x", gradientWidth/2)
+		.attr("y", 0)
+		.attr("stop-color", cardinality_colors(1));
 
 	linearGradientRight.append("stop") 
-		.attr("x", (diagramWidth/2)+gradientWidth/2)
-		.attr("y", gradientYMin)  
+		.attr("x", gradientWidth/2)
+		.attr("y", 0)  
 		.attr("stop-color", cardinality_colors(2));
 		
 	legendBar.append("rect")
@@ -477,12 +471,6 @@ function drawStructuralChordDiagram() {
 		.attr("width", gradientWidth/2)
 		.attr("height", gradientHeight)
 		.style("fill", "url(#linearGradientRight)");
-		
-	linearGradientRight.selectAll("stop") 
-		.data(["red", "darkred"])                  
-		.enter().append("stop")
-		.attr("offset", function(d,i) { return i/(["red", "darkred"].length-1); })
-		.attr("stop-color", function(d) { return d; });
 		
 	var defsNrRows = legends.append("defs");
 	
@@ -496,24 +484,24 @@ function drawStructuralChordDiagram() {
 		.attr("y2", 0);
 		
 	linearGradientNrRows.append("stop") 
-		.attr("x", gradientNrRowsXMin)
-		.attr("y", gradientNrRowsYMin)
+		.attr("x", 0)
+		.attr("y", gradientWidth)
 		.attr("stop-color", density_colors(0));
 
 	linearGradientNrRows.append("stop") 
-		.attr("x", gradientNrRowsXMin+gradientWidth)
-		.attr("y", gradientNrRowsYMin)  
+		.attr("x", 0)
+		.attr("y", gradientWidth)
 		.attr("stop-color", density_colors(density_colors.range().length-1));
 		
 	legendBar.append("rect")
-		.attr("x", gradientNrRowsXMin)
+		.attr("x", gradientXMin)
 		.attr("y", gradientNrRowsYMin)
 		.attr("width", gradientWidth)
 		.attr("height", gradientHeight)
 		.style("fill", "url(#linearGradientNrRows)");
 		
 	legendBar.append("text")
-		.attr("x", gradientNrRowsXMin)
+		.attr("x", gradientXMin)
 		.attr("y",gradientNrRowsYMin+gradientHeight+15)
 		.attr("width", gradientWidth)
 		.attr("height", 10)
@@ -521,18 +509,12 @@ function drawStructuralChordDiagram() {
 		.text(function(d) { return formatNumber(values_nr_rows_domain[0]); });
 		
 	legendBar.append("text")
-		.attr("x", gradientNrRowsXMin+gradientWidth)
+		.attr("x", gradientXMin+gradientWidth)
 		.attr("y",gradientNrRowsYMin+gradientHeight+15)
 		.attr("width", gradientWidth)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
 		.text(function(d) { return formatNumber(values_nr_rows_domain[values_nr_rows_domain.length-1]); });
-		
-	linearGradientNrRows.selectAll("stop") 
-		.data(density_colors.range())                  
-		.enter().append("stop")
-		.attr("offset", function(d,i) { return i/(density_colors.range().length-1); })
-		.attr("stop-color", function(d) { return d; });
 }
 
 function getDensityRange(values) {
@@ -1174,7 +1156,7 @@ function showRows() {
 
 								var tableHeader = "";
 								for(var i = 0; i < resultHeader.length; i++) {
-									tableHeader += "<th style='cursor: pointer;' onclick='sortShowRows(&quot;"+resultHeader[i].orgtable+"&quot;, &quot;"+resultHeader[i].orgname+"&quot;);'><div id='tableHeaderCellContent' style='height: 24px;'><div id='tableHeaderCellText' style='float: left; height: 24px;'>"+resultHeader[i].name+"</div>";
+									tableHeader += "<th style='cursor: pointer;'><div id='tableHeaderCellContent' style='height: 24px;'><div id='tableHeaderCellText' style='float: left; height: 24px;'><span onclick='sortShowRows(&quot;"+resultHeader[i].orgtable+"&quot;, &quot;"+resultHeader[i].orgname+"&quot;);'>"+resultHeader[i].name+"</span></div>";
 									
 									var tIndex = 0;
 									var aIndex = 0;
@@ -1241,7 +1223,7 @@ function showRows() {
 			}
 		});
 	} else {
-		document.getElementById("query").innerHTML = "";
+		document.getElementById("query").innerHTML = "<p>Choose some tables to create a SELECT statement.</p>";
 		document.getElementById("rowsTable").innerHTML = "";
 	}
 }

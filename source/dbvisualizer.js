@@ -2,6 +2,8 @@
 Author: Fiona Waser
 */
 
+var lowCardinalityThreshold = 50;
+
 var tables;
 var graph;
 var matrix = [];
@@ -12,6 +14,7 @@ var attributeCardinalitiesPercentages = [];
 var constraintCardinalities = [];
 var constraintCardinalitiesPercentages = [];
 var chosenTables = [];
+var chosenChord = null;
 var chosenAttributes = [];
 var chosenAttributeAggrFunctions = [];
 var chosenAttributesOrderBy = [];
@@ -172,9 +175,9 @@ function confirmRefreshRowRelatedInfo() {
 function drawStructuralChordDiagram() {
 	clearElement("#diagram");
 	
-	var windowWidth = $(window).width()/2-20;
+	var diagramWidth = $(window).width()/2-20;
 	
-	var width = windowWidth,
+	var width = diagramWidth,
 		height = 800,
 		outerRadius = Math.min(width, height) / 2 - 50,
 		innerRadius = outerRadius - 62;
@@ -215,8 +218,8 @@ function drawStructuralChordDiagram() {
 		.range(values_nr_rows_range);
 	
 	var cardinality_colors = d3.scale.linear()
-		.domain([0, 1, 1.01])
-		.range(["white", "darkblue", "red"]);
+		.domain([0, 1, 1.01, 2])
+		.range(["white", "darkblue", "red", "darkred"]);
 			
 	var arc = d3.svg.arc()
 		.innerRadius(innerRadius)
@@ -284,7 +287,11 @@ function drawStructuralChordDiagram() {
 		.style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
 		.text(function(d, i) { return tables[i].children[0].textContent; })
 		.on('click', function(d) {
-			showAttributeInfo(d.index);
+			if(chosenChord != null) {
+				chosenChord = null;
+				chosenTables = [];
+			}
+			
 			setTableChosen(d.index);
 			
 			$(".group path").css("stroke-width", ".25px");
@@ -295,6 +302,7 @@ function drawStructuralChordDiagram() {
 				$(".group:eq("+chosenTables[i]+") path").css("stroke", "gold");
 			}
 			
+			showAttributeInfo(d.index);
 			showRows();
 		})
 		.on("mouseover", function(d) {
@@ -320,12 +328,18 @@ function drawStructuralChordDiagram() {
 		.style("stroke", "#000")
 		.style("stroke-width", ".25px")
 		.on('click', function(d) {
-			if(chosenTables.length != 0) {
-				chosenTables = [];
-			}
+			chosenChord = d;
 			
-			$(".group:eq("+d.source.index+") text").d3Click();
-			$(".group:eq("+d.target.index+") text").d3Click();
+			$(".group path").css("stroke-width", ".25px");
+			$(".group path").css("stroke", "black");
+			
+			$(".group:eq("+chosenChord.source.index+") path").css("stroke-width", "2.5px");
+			$(".group:eq("+chosenChord.source.index+") path").css("stroke", "gold");
+			$(".group:eq("+chosenChord.target.index+") path").css("stroke-width", "2.5px");
+			$(".group:eq("+chosenChord.target.index+") path").css("stroke", "gold");
+			
+			showAttributeInfo(chosenChord.source.index);
+			showRows();
 		})
 		.on("mouseover", function(d) {
 			d3.select(this).style("cursor", "pointer");
@@ -346,60 +360,179 @@ function drawStructuralChordDiagram() {
 			return references[d.source.index][d.target.index];
 		}
 	});
+		
+	var legends = d3.select("#legends").append("svg")
+		.attr("width", diagramWidth);
 	
-	/*var legends = d3.select("#legends").append("svg")
-		.attr("width", "800px")
-		.attr("height", "200px");
-		
-	var legend_nr_rows = legends.selectAll(".legend")
-		.data(density_color_picker.domain())
-		.enter().append("g")
-		.attr("class", "legend")
-		.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+	var gradientWidth = 250;
+	var gradientHeight = 20;
+	var gradientYMin = 30;
+	var gradientNrRowsXMin = diagramWidth/2-(gradientWidth/2);
+	var gradientNrRowsYMin = 100;
 
-	legend.append("rect")
-		.attr("x", 800 - 18)
-		.attr("width", 18)
-		.attr("height", 18)
-		.style("fill", function(i) { density_colors(i); });
-
-	legend.append("text")
-		.attr("x", 800 - 24)
-		.attr("y", 9)
-		.attr("dy", ".35em")
-		.style("text-anchor", "end")
-		.text(function(d) { return density_color_picker(d); });*/
+	var defsLeft = legends.append("defs");
 	
-	/*var defs = legends.append("defs");
-
-	var linearGradient = defs.append("linearGradient")
-		.attr("id", "linear-gradient");
+	var linearGradientLeft = defsLeft.append("linearGradient")
+		.attr("id", "linearGradientLeft");
 		
-	linearGradient
-		.attr("x1", "0%")
-		.attr("y1", "0%")
-		.attr("x2", "100%")
-		.attr("y2", "0%");
+	linearGradientLeft
+		.attr("x1", 0)
+		.attr("y1", 0)
+		.attr("x2", gradientWidth/2)
+		.attr("y2", 0);
 		
-	linearGradient.append("stop") 
-		.attr("offset", "0%")   
+	linearGradientLeft.append("stop") 
+		.attr("x", gradientNrRowsXMin)
+		.attr("y", gradientYMin)
 		.attr("stop-color", cardinality_colors(0));
 
-	linearGradient.append("stop") 
-		.attr("offset", "100%")   
+	linearGradientLeft.append("stop") 
+		.attr("x", gradientNrRowsXMin+gradientWidth/2)
+		.attr("y", gradientYMin)  
 		.attr("stop-color", cardinality_colors(1));
 		
-	svg.append("rect")
-		.attr("width", 300)
-		.attr("height", 20)
-		.style("fill", "url(#linear-gradient)");
+	var legendTitle = ["LegendTitle"];
 		
-	linearGradient.selectAll("stop") 
-		.data( cardinality_colors.range() )                  
+	var legendBar = legends.selectAll("g")
+		.data(legendTitle)
+		.enter().append("g");
+		
+	legendBar.append("text")
+		.attr("x", gradientNrRowsXMin+gradientWidth/2)
+		.attr("y", gradientYMin-5)
+		.attr("width", gradientWidth/2)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return "Contraint Cardinality"; });
+		
+	legendBar.append("text")
+		.attr("x", gradientNrRowsXMin+gradientWidth/2)
+		.attr("y", gradientNrRowsYMin-5)
+		.attr("width", gradientWidth/2)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return "Nr. Rows"; });
+			
+	legendBar.append("rect")
+		.attr("x", gradientNrRowsXMin)
+		.attr("y", gradientYMin)  
+		.attr("width", gradientWidth/2)
+		.attr("height", gradientHeight)
+		.style("fill", "url(#linearGradientLeft)");
+		
+	legendBar.append("text")
+		.attr("x", gradientNrRowsXMin)
+		.attr("y", gradientYMin+gradientHeight+15)
+		.attr("width", gradientWidth/2)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return "0%"; });
+		
+	legendBar.append("text")
+		.attr("x", gradientNrRowsXMin+gradientWidth/2)
+		.attr("y", gradientYMin+gradientHeight+15)
+		.attr("width", gradientWidth/2)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return "100%"; });
+		
+	legendBar.append("text")
+		.attr("x", gradientNrRowsXMin+gradientWidth)
+		.attr("y", gradientYMin+gradientHeight+15)
+		.attr("width", gradientWidth/2)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return "200%"; });
+		
+	linearGradientLeft.selectAll("stop") 
+		.data(["white", "darkblue"])                  
 		.enter().append("stop")
-		.attr("offset", function(d,i) { return i/(cardinality_colors.range().length-1); })
-		.attr("stop-color", function(d) { return d; });*/
+		.attr("offset", function(d,i) { return i/(["white", "darkblue"].length-1); })
+		.attr("stop-color", function(d) { return d; });
+		
+	var defsRight = legends.append("defs");
+		
+	var linearGradientRight = defsRight.append("linearGradient")
+		.attr("id", "linearGradientRight");
+		
+	linearGradientRight
+		.attr("x1", 0)
+		.attr("y1", 0)
+		.attr("x2", gradientWidth)
+		.attr("y2", 0);
+		
+	linearGradientRight.append("stop") 
+		.attr("x", diagramWidth/2)
+		.attr("y", gradientYMin)
+		.attr("stop-color", cardinality_colors(1.01));
 
+	linearGradientRight.append("stop") 
+		.attr("x", (diagramWidth/2)+gradientWidth/2)
+		.attr("y", gradientYMin)  
+		.attr("stop-color", cardinality_colors(2));
+		
+	legendBar.append("rect")
+		.attr("x", diagramWidth/2)
+		.attr("y", gradientYMin)
+		.attr("width", gradientWidth/2)
+		.attr("height", gradientHeight)
+		.style("fill", "url(#linearGradientRight)");
+		
+	linearGradientRight.selectAll("stop") 
+		.data(["red", "darkred"])                  
+		.enter().append("stop")
+		.attr("offset", function(d,i) { return i/(["red", "darkred"].length-1); })
+		.attr("stop-color", function(d) { return d; });
+		
+	var defsNrRows = legends.append("defs");
+	
+	var linearGradientNrRows = defsLeft.append("linearGradient")
+		.attr("id", "linearGradientNrRows");
+		
+	linearGradientNrRows
+		.attr("x1", 0)
+		.attr("y1", 0)
+		.attr("x2", gradientWidth)
+		.attr("y2", 0);
+		
+	linearGradientNrRows.append("stop") 
+		.attr("x", gradientNrRowsXMin)
+		.attr("y", gradientNrRowsYMin)
+		.attr("stop-color", density_colors(0));
+
+	linearGradientNrRows.append("stop") 
+		.attr("x", gradientNrRowsXMin+gradientWidth)
+		.attr("y", gradientNrRowsYMin)  
+		.attr("stop-color", density_colors(density_colors.range().length-1));
+		
+	legendBar.append("rect")
+		.attr("x", gradientNrRowsXMin)
+		.attr("y", gradientNrRowsYMin)
+		.attr("width", gradientWidth)
+		.attr("height", gradientHeight)
+		.style("fill", "url(#linearGradientNrRows)");
+		
+	legendBar.append("text")
+		.attr("x", gradientNrRowsXMin)
+		.attr("y",gradientNrRowsYMin+gradientHeight+15)
+		.attr("width", gradientWidth)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return formatNumber(values_nr_rows_domain[0]); });
+		
+	legendBar.append("text")
+		.attr("x", gradientNrRowsXMin+gradientWidth)
+		.attr("y",gradientNrRowsYMin+gradientHeight+15)
+		.attr("width", gradientWidth)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return formatNumber(values_nr_rows_domain[values_nr_rows_domain.length-1]); });
+		
+	linearGradientNrRows.selectAll("stop") 
+		.data(density_colors.range())                  
+		.enter().append("stop")
+		.attr("offset", function(d,i) { return i/(density_colors.range().length-1); })
+		.attr("stop-color", function(d) { return d; });
 }
 
 function getDensityRange(values) {
@@ -543,15 +676,21 @@ function showAttributeInfo(index) {
 		var cardinalityInfo = "";
 		var cardinalityLow = false;
 		var percent = attributeCardinalitiesPercentages[index][j]*100;
-		if(attributeCardinalities[index][j] <= 50) {
-			cardinalityInfo = "low ("+formatNumber(attributeCardinalities[index][j])+" - "+formatNumber(percent)+"%)";
+		var attrCardinality = parseFloat(attributeCardinalities[index][j]);
+		if(attrCardinality <= lowCardinalityThreshold) {
+			if(attrCardinality >= 1) {
+				cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
+			} else {
+				cardinalityInfo = "low ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
+			}
+			
 			if(key != "PRI") {
 				cardinalityLow = true;
 			}
-		} else if(attributeCardinalitiesPercentages[index][j] == 1) {
-			cardinalityInfo = "high ("+formatNumber(attributeCardinalities[index][j])+" - "+formatNumber(percent)+"%)";
+		} else if(attrCardinality >= 1) {
+			cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
 		} else {
-			cardinalityInfo = "high ("+formatNumber(attributeCardinalities[index][j])+" - "+formatNumber(percent)+"%)";
+			cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
 		}
 		
 		var fullRectWidth = 150;
@@ -646,7 +785,11 @@ function toggleOneAttribute(source) {
 }
 
 function showRows() {
-	if(chosenTables.length != 0) {
+	if(chosenChord != null) {
+		chosenTables = [chosenChord.target.index, chosenChord.source.index];
+	}
+	
+	if(chosenTables.length > 0) {
 		var chosenAttributesAll = true;
 		for(var i = 0; i < chosenAttributes.length; i++) {
 			for(var j = 0; j < chosenAttributes[i].length; j++) {
@@ -1066,7 +1209,7 @@ function showRows() {
 												if(attributeName == resultHeader[i].orgname) {
 													var cardinalityLow = false;
 													var key = attributes[l].children[3].textContent;
-													if(attributeCardinalities[j][l] <= 50 && key != "PRI") {
+													if(attributeCardinalities[j][l] <= lowCardinalityThreshold && key != "PRI") {
 														cardinalityLow = true;
 													}
 													if(cardinalityLow) {
@@ -1099,6 +1242,7 @@ function showRows() {
 		});
 	} else {
 		document.getElementById("query").innerHTML = "";
+		document.getElementById("rowsTable").innerHTML = "";
 	}
 }
 

@@ -66,11 +66,13 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		</div>
 	</div>
 	<div id="content">
-		<div id="diagram"></div>
+		<div id="leftSidebar">
+			<div id="diagram"></div>
+			<div id="legends"></div>
+		</div>
 		<div id="rightSidebar">
 			<div id="attributeInfo"></div>
 		</div>
-		<div id="legends"></div>
 		<div id="rows">
 			<h2>Rows</h2>
 			<div id="rowsConfig">

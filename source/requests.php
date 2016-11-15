@@ -11,6 +11,10 @@ if( !isset($_POST['argument']) ) { $aResult['error'] = 'No function arguments!';
 
 if( !isset($aResult['error']) ) {
 	switch($_POST['functionname']) {
+		case 'getAttributesAutocomplete':
+			$aResult['result'] = getAttributesAutocomplete($_POST['argument']['input'],$_POST['argument']['table']);
+			break;
+			
 		case 'processQueryRequest':
 			$aResult['result'] = processQueryRequest($_POST['argument']);
 			break;

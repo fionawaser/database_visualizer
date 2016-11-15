@@ -17,8 +17,14 @@ Author: Fiona Waser
 			<li><a href="search.php">Search</a></li>
 		</ul> 
 		
+		<h2>Welcome to the Database Visualizer</h2>
 		<p>What do you want to do?</p>
 		
-		<p><a href="setup.php">Setup Assistant</a></p>
+		<ul>
+			<li>Visualize a Database: Go to the <a href="setup.php">Setup Assistant</a>.</li>
+			<li>Import and existing Database Visualizer File: Go to the <a href="setup.php">Setup Assistant</a> and choose the file.</li>
+			<li>See the Visualization: Go the the Visualizaion Tab.</li>
+			<li>Search in your Database by keywords (search available after first Setup).</li>
+		</ul>
 	</body>
 </html>

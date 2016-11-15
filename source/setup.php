@@ -20,6 +20,20 @@ Author: Fiona Waser
 			$db_name = $_POST['db_name'];
 			$db_host = $_POST['db_host'];
 			
+			$fileImportSuccess = true;
+			
+			if(isset($_FILES['importFile'])) {
+				$importFile = $_FILES['importFile'];
+				
+				if(!fileImport($importFile)) {
+					$fileImportSuccess = false;
+					
+					echo "<p>Something went wrong with the File Import.</p>";
+				
+					echo "<p>Back to <a href='setup.php'>Setup Assistant</a></p>";
+				}
+			}
+			
 			$config_file_content = "[database]\nuser = ".$db_user."\npassword = ".$db_pw."\ndb_name = ".$db_name."\nhost = ".$db_host;
 			
 			if(file_exists("config.ini")) {
@@ -34,11 +48,15 @@ Author: Fiona Waser
 				$con = mysqli_connect($db_host, $db_user, $db_pw);
 				mysqli_select_db($con, $db_name);
 				
-				getMetadata($con, $db_name);
+				if(!isset($_FILES['importFile'])) {
+					getMetadata($con, $db_name);
+				}
 				
 				mysqli_close($con);
 				
-				echo "<p>Setup was successful.</p>";
+				if($fileImportSuccess) {
+					echo "<p>Setup was successful.</p>";
+				}
 			} else {
 				echo "<p>Something is wrong with your Database-Info. Please check them and try again.</p>";
 				
@@ -57,13 +75,15 @@ Author: Fiona Waser
 		<div id="setup">
 			<p>Please fill out this form:</p>
 			
-			<form name="setup" action="setup.php" method="post">
+			<form name="setup" action="setup.php" method="post" enctype="multipart/form-data">
 				<p>Database info:<p>
 				<table>
 					<tr><td>User:</td><td><input name="db_user" type="text" value="<?php echo $username_old; ?>" required/></td></tr>
 					<tr><td>Password:</td><td><input name="db_pw" type="text" value="<?php echo $password_old; ?>" required/></td></tr>
 					<tr><td>Database Name:</td><td><input name="db_name" type="text" value="<?php echo $dbn_old; ?>" required/></td></tr>
 					<tr><td>Host:</td><td><input name="db_host" type="text" value="<?php echo $host_old; ?>" required/></td></tr>
+					<tr></tr>
+					<tr><td>Import file:</td><td><input type="file" name="importFile" id="importFile"></td></tr>
 				</table>
 				
 				<p><input name="submit_info" type="submit" value="Ready"></p>

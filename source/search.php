@@ -6,7 +6,8 @@ Author: Fiona Waser
 <head>
 	<meta charset="utf-8">
 	<link rel="stylesheet" type="text/css" href="dbvisualizer.css">
-	<script src="lib/d3.js"></script>
+	<script type="text/javascript" src="lib/jquery-3.1.1.min.js"></script>
+	<script type="text/javascript" src="search.js"></script>
 	<title>Database Visualizer</title>
 </head>
 <?php
@@ -35,7 +36,7 @@ $tables = simplexml_load_file("tables.xml");
 		<h2>Search</h2>
 		<form id="searchform" name="searchform" action="" method="post">
 			<p>
-				<select name="searchTable">
+				<select name="searchTable" id="searchTable">
 					<?php
 					foreach($tables->table as $table) {
 						if($_POST["searchTable"] == $table->name) {
@@ -46,7 +47,7 @@ $tables = simplexml_load_file("tables.xml");
 					}
 					?>
 				</select>
-				<input type="text" name="searchexpression" value="<?php if(isset($_POST['searchexpression'])) echo $_POST['searchexpression']; ?>" placeholder="Search Term" size="100"/>
+				<input type="text" name="searchexpression" id="searchexpression" list="attributeSuggestions" value="<?php if(isset($_POST['searchexpression'])) echo $_POST['searchexpression']; ?>" placeholder="Search Term" size="100" oninput="searchAttributeAutocomplete(this.value);"><datalist id="attributeSuggestions"></datalist>
 				<input type="number" name="limit" value="<?php if(isset($_POST['limit'])) echo $_POST['limit']; else echo 10; ?>"/>
 				<input type="submit" name="submitSearch" value="Search">
 			</p>
@@ -58,6 +59,29 @@ $tables = simplexml_load_file("tables.xml");
 				$expression = $_POST['searchexpression'];
 			}
 			
+			preg_match_all('/"(?:\\\\.|[^\\\\"])*"|\S+/', $expression, $matches);
+			
+			$keywords = array();
+			foreach($matches[0] as $match) {
+				$filtered = str_replace('"', "", $match);
+				array_push($keywords, $filtered);
+			}
+			
+			$searchByAttribute = false;
+			foreach($keywords as $keyword) {
+				$keywordCurrent = explode("=", $keyword);
+				if(sizeof($keywordCurrent) >= 2) {
+					$searchByAttribute = true;
+					
+					$searchByAttributeMapping = array();
+					foreach($keywords as $keywordPush) {
+						$current = explode("=", $keywordPush);
+						
+						array_push($searchByAttributeMapping, $current);
+					}
+				}
+			}
+			
 			$tableIndex = 0;
 			foreach($tables->table as $table) {
 				if(strcmp($table->name, $_POST["searchTable"]) == 0) {
@@ -66,37 +90,69 @@ $tables = simplexml_load_file("tables.xml");
 				$tableIndex++;
 			}
 			
-			$attrs = "";
-			foreach($tables->table[$tableIndex]->attributes->attribute as $attribute) {
-				$attrs .= ",".$attribute->field;
-			}
+			$query = "SELECT * FROM ".$_POST['searchTable']." WHERE ";
 			
-			$query = "SELECT * FROM ".$_POST['searchTable']." WHERE CONCAT_WS(' '".$attrs.") LIKE LOWER('%".$expression."%') LIMIT ".$_POST['limit'];
-			$res = mysqli_query($con, $query);
-				
-			$rows = array();
-				
-			if(mysqli_num_rows($res)) {
+			if($searchByAttribute) {
 				$i = 0;
-				while($row = mysqli_fetch_row($res)) {
-					$rows[$i] = $row;
+				foreach($searchByAttributeMapping as $mapping) {
+					if($i == sizeof($searchByAttributeMapping)-1) {
+						$query .= $mapping[0]." LIKE '%".$mapping[1]."%'";	
+					} else {
+						$query .= $mapping[0]." LIKE '%".$mapping[1]."%' AND ";
+					}
 					$i++;
 				}
-				
-				echo "<p><table>
-					<tr>";
+			} else {
+				$attributes = array();
 				foreach($tables->table[$tableIndex]->attributes->attribute as $attribute) {
-					echo "<th>".$attribute->field."</th>";
+					array_push($attributes, $attribute->field);
 				}
-				echo "</tr>";
-				foreach($rows as $row) {
-					echo "<tr>";
-					foreach($row as $r) {
-						echo "<td>".$r."</td>";
+				
+				$attrs = "";
+				foreach($attributes as $attribute) {
+					$attrs .= ",".$attribute;
+				}
+				
+				$i = 0;
+				foreach($keywords as $keyword) {
+					if($i == sizeof($keywords)-1) {
+						$query .= "CONCAT_WS(' '".$attrs.") LIKE '%".$keyword."%'";	
+					} else {
+						$query .= "CONCAT_WS(' '".$attrs.") LIKE '%".$keyword."%' AND ";
+					}
+					$i++;
+				}
+			}
+			
+			$query .=  " LIMIT ".$_POST['limit'];
+			
+			if($res = mysqli_query($con, $query)) {
+				$rows = array();
+					
+				if(mysqli_num_rows($res)) {
+					$i = 0;
+					while($row = mysqli_fetch_row($res)) {
+						$rows[$i] = $row;
+						$i++;
+					}
+					
+					echo "<p><table>
+						<tr>";
+					foreach($tables->table[$tableIndex]->attributes->attribute as $attribute) {
+						echo "<th>".$attribute->field."</th>";
 					}
 					echo "</tr>";
+					foreach($rows as $row) {
+						echo "<tr>";
+						foreach($row as $r) {
+							echo "<td>".$r."</td>";
+						}
+						echo "</tr>";
+					}
+					echo "</table></p>";
 				}
-				echo "</table></p>";
+			} else {
+				echo "<p>Something is wrong with your search. Please check it and try again.</p>";
 			}
 		}
 		?>

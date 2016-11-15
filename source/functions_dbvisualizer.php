@@ -21,6 +21,27 @@ function checkDBInfos($db_user, $db_pw, $db_name, $db_host) {
 	return true;
 }
 
+function fileImport($file) {
+	echo print_r($file);
+	$target_file = "tables.xml";
+	$uploadOk = 1;
+	$fileType = $file["type"];
+	
+	if($fileType != "text/xml") {
+		$uploadOk = 0;
+	}
+	
+	if ($uploadOk == 0) {
+		return false;
+	} else {
+		if (move_uploaded_file($file["tmp_name"], $target_file)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
 function getMetadata($con, $db_name) {
 	if(file_exists("tables.xml")) {
 		unlink("tables.xml");
@@ -344,6 +365,32 @@ function calculatePieChartData($con, $table1, $table2, $displayAttributeTable2) 
 	fclose($file);
 	
 	return $filepath;
+}
+
+function getAttributesAutocomplete($input, $table) {
+	$settings = parse_ini_file("config.ini", true);
+		
+	$username = $settings['database']['user'];
+	$password = $settings['database']['password'];
+	$dbn = $settings['database']['db_name'];
+	$host = $settings['database']['host'];
+
+	$con = mysqli_connect($host, $username, $password);
+
+	mysqli_select_db($con, $dbn);
+	
+	$query = "SHOW columns FROM ".$table." WHERE field LIKE '".$input."%'";
+	
+	$rows = array();
+	$res = mysqli_query($con, $query);
+	if(mysqli_num_rows($res)) {
+		while($row = mysqli_fetch_row($res)) {
+			array_push($rows, $row);
+		}
+	}
+	mysqli_free_result($res);
+	
+	return $rows;
 }
 
 function processQueryRequest($query) {

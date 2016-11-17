@@ -22,7 +22,6 @@ function checkDBInfos($db_user, $db_pw, $db_name, $db_host) {
 }
 
 function fileImport($file) {
-	echo print_r($file);
 	$target_file = "tables.xml";
 	$uploadOk = 1;
 	$fileType = $file["type"];

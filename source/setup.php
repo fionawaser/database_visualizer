@@ -22,7 +22,7 @@ Author: Fiona Waser
 			
 			$fileImportSuccess = true;
 			
-			if(isset($_FILES['importFile'])) {
+			if(!empty($_FILES['importFile']['name'])) {
 				$importFile = $_FILES['importFile'];
 				
 				if(!fileImport($importFile)) {
@@ -31,6 +31,8 @@ Author: Fiona Waser
 					echo "<p>Something went wrong with the File Import.</p>";
 				
 					echo "<p>Back to <a href='setup.php'>Setup Assistant</a></p>";
+					
+					echo "<p>Back to <a href='index.php'>Welcome Page</a></p>";
 				}
 			}
 			
@@ -48,7 +50,7 @@ Author: Fiona Waser
 				$con = mysqli_connect($db_host, $db_user, $db_pw);
 				mysqli_select_db($con, $db_name);
 				
-				if(!isset($_FILES['importFile'])) {
+				if(empty($_FILES['importFile']['name'])) {
 					getMetadata($con, $db_name);
 				}
 				
@@ -56,11 +58,19 @@ Author: Fiona Waser
 				
 				if($fileImportSuccess) {
 					echo "<p>Setup was successful.</p>";
+					
+					echo "<p>Download the structure file <a href='download_structure_file.php'>here</a>. You can import this file to speed up the setup process next time (new content or new database schema won't be regarded but you can update row related information on the visualization page.)</p>";
+					
+					echo "<p>Back to <a href='setup.php'>Setup Assistant</a></p>";
+					
+					echo "<p>Back to <a href='index.php'>Welcome Page</a></p>";
 				}
 			} else {
 				echo "<p>Something is wrong with your Database-Info. Please check them and try again.</p>";
 				
 				echo "<p>Back to <a href='setup.php'>Setup Assistant</a></p>";
+				
+				echo "<p>Back to <a href='index.php'>Welcome Page</a></p>";
 			}
 		} else {
 			if(file_exists("config.ini")) {
@@ -93,8 +103,6 @@ Author: Fiona Waser
 			<?php
 			}
 			?>
-			
-			Back to <a href="index.php">Welcome Page</a>
 		</div>
 	</body>
 </html>

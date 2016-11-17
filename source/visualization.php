@@ -67,21 +67,20 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 	</div>
 	<div id="content">
 		<div id="leftSidebar">
-			<div id="diagram"></div>
 			<div id="legends"></div>
+			<div id="diagram"></div>
 		</div>
 		<div id="rightSidebar">
-			<div id="attributeInfo"><span style="margin-right: 150px;">Go with your mouse pointer over a table to see information about its attributes.</span></div>
+			<div id="attributeInfo"><span style="margin-right: 150px;">Click a table to see information about its attributes.</span></div>
 		</div>
 		<div id="rows">
 			<h2>Rows</h2>
 			<div id="rowsConfig">
-				<p>Number of rows: <input type="number" name="limit" id="limit" value="10" onclick="showRows();"/></p>
+				<p>Number of rows: <input type="number" name="limit" id="limit" value="10" oninput="showRows();"/></p>
 			</div>
-			<div id="query"><p>Choose some tables to create a SELECT statement.</p></div>
+			<div id="query"><p>Click some tables while holding the Ctrl-Key to run a query.</p></div>
 			<div id="rowsTable"></div>
 		</div>
-	</div>
 </body>
 <script>
 	// refresh on first load of page to avoid getting the old chord diagram

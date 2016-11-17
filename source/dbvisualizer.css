@@ -68,6 +68,11 @@ ul.nav li a:hover {
 	height: auto;
 }
 
+#diagramTitle {
+	float: left;
+	width: 100%;
+}
+
 #structuralForm {
 	float: right;
 	margin-top: 10px;
@@ -136,11 +141,6 @@ ul.nav li a:hover {
 	height: auto;
 }
 
-#diagramTitle {
-	float: left;
-	width: 50%;
-}
-
 #diagram {
 	float: left;
 	width: 50%;
@@ -149,8 +149,8 @@ ul.nav li a:hover {
 
 #legends {
 	float: left;
-	height: auto;
 	width: 100%;
+	height: 100px;
 }
 
 #query {
@@ -172,7 +172,7 @@ ul.nav li a:hover {
 }
 
 #rightSidebar {
-	float: left;
+	float: right;
 	height: auto;
 	width: 50%;
 }

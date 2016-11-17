@@ -98,7 +98,11 @@ function drawStructuralChordDiagramInit() {
 			constraintCardinalitiesPercentages[i] = [];
 				
 			for(var j = 0; j < tables.length; j++) {
-				matrix[i][j] = 0;
+				if(i == j) {
+					matrix[i][j] = 1;
+				} else {
+					matrix[i][j] = 0;
+				}
 					
 				references[i][j] = "";
 					
@@ -182,6 +186,8 @@ function drawStructuralChordDiagram() {
 		outerRadius = Math.min(width, height) / 2 - 50,
 		innerRadius = outerRadius - 62;
 		
+	d3.select("body").on("keydown", function() {});
+	
 	var svg = d3.select("#diagram").append("svg")
 		.attr("width", width)
 		.attr("height", height)
@@ -189,7 +195,7 @@ function drawStructuralChordDiagram() {
 		.attr("id", "circle")
 		.style("font", "12px sans-serif")
 		.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
-
+		
 	var density_color_picker = d3.scale.linear()
 		.domain([0, tables.length-1])
 		.range(["white", "black"]);
@@ -260,20 +266,37 @@ function drawStructuralChordDiagram() {
 		.style("fill-opacity", ".5")
 		.style("stroke", "black")
 		.style("stroke-width", ".25px")
-		.on('click', function(d) {
-			$(".group:eq("+d.index+") text").d3Click();
+		.on("click", function(d) {
+			showAttributeInfo(d.index);
+			
+			if(d3.event.ctrlKey) {
+				if(chosenChord != null) {
+					chosenChord = null;
+					chosenTables = [];
+				}
+				
+				setTableChosen(d.index);
+				
+				$(".group path").css("stroke-width", ".25px");
+				$(".group path").css("stroke", "black");
+				
+				for(var i = 0; i < chosenTables.length; i++) {
+					$(".group:eq("+chosenTables[i]+") path").css("stroke-width", "4.5px");
+					$(".group:eq("+chosenTables[i]+") path").css("stroke", "gold");
+				}
+				
+				showRows();
+			}
 		})
 		.on("mouseover", function(d) {
 			d3.select(this).style("cursor", "pointer");
-			
 			$(".group:eq("+d.index+") text").css("font-weight", "bold");
-			
-			showAttributeInfo(d.index);
+			$(".group:eq("+d.index+") text").css("font-size", "15px");
 		})
 		.on("mouseout", function(d) {
 			d3.select(this).style("cursor", "default");
-			
 			$(".group:eq("+d.index+") text").css("font-weight", "normal");
+			$(".group:eq("+d.index+") text").css("font-size", "12px");
 		});
 			
 	var groupText = group.append("text")
@@ -286,35 +309,37 @@ function drawStructuralChordDiagram() {
 		})
 		.style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
 		.text(function(d, i) { return tables[i].children[0].textContent; })
-		.on('click', function(d) {
-			if(chosenChord != null) {
-				chosenChord = null;
-				chosenTables = [];
-			}
-			
-			setTableChosen(d.index);
-			
-			$(".group path").css("stroke-width", ".25px");
-			$(".group path").css("stroke", "black");
-			
-			for(var i = 0; i < chosenTables.length; i++) {
-				$(".group:eq("+chosenTables[i]+") path").css("stroke-width", "2.5px");
-				$(".group:eq("+chosenTables[i]+") path").css("stroke", "gold");
-			}
-			
+		.on("click", function(d) {
 			showAttributeInfo(d.index);
-			showRows();
+			
+			if(d3.event.ctrlKey) {
+				if(chosenChord != null) {
+					chosenChord = null;
+					chosenTables = [];
+				}
+				
+				setTableChosen(d.index);
+				
+				$(".group path").css("stroke-width", ".25px");
+				$(".group path").css("stroke", "black");
+				
+				for(var i = 0; i < chosenTables.length; i++) {
+					$(".group:eq("+chosenTables[i]+") path").css("stroke-width", "4.5px");
+					$(".group:eq("+chosenTables[i]+") path").css("stroke", "gold");
+				}
+				
+				showRows();
+			}
 		})
 		.on("mouseover", function(d) {
 			d3.select(this).style("cursor", "pointer");
-			
 			d3.select(this).style("font-weight", "bold");
-			
-			showAttributeInfo(d.index);
+			d3.select(this).style("font-size", "15px");
 		})
 		.on("mouseout", function(d) {
 			d3.select(this).style("cursor", "default");
 			d3.select(this).style("font-weight", "normal");
+			d3.select(this).style("font-size", "12px");
 		});
 
 	var chord = svg.selectAll(".chord")
@@ -324,39 +349,57 @@ function drawStructuralChordDiagram() {
 		.style("fill", function(d) {
 			return cardinality_colors(getCardinalityCumulatedPercentage(d));
 		})
+		.style("opacity", function(d) {
+			if(d.source.index == d.target.index) {
+				return "0";
+			} else {
+				return "1";
+			}
+		})
 		.attr("d", path)
 		.style("stroke", "#000")
 		.style("stroke-width", ".25px")
-		.on('click', function(d) {
-			chosenChord = d;
-			
-			$(".group path").css("stroke-width", ".25px");
-			$(".group path").css("stroke", "black");
-			
-			$(".group:eq("+chosenChord.source.index+") path").css("stroke-width", "2.5px");
-			$(".group:eq("+chosenChord.source.index+") path").css("stroke", "gold");
-			$(".group:eq("+chosenChord.target.index+") path").css("stroke-width", "2.5px");
-			$(".group:eq("+chosenChord.target.index+") path").css("stroke", "gold");
-			
-			showAttributeInfo(chosenChord.source.index);
-			showRows();
+		.on("click", function(d) {
+			if(d.source.index != d.target.index) {
+				chosenChord = d;
+				
+				showAttributeInfo(chosenChord.source.index);
+				
+				if(d3.event.ctrlKey) {
+					$(".group path").css("stroke-width", ".25px");
+					$(".group path").css("stroke", "black");
+					
+					$(".group:eq("+chosenChord.source.index+") path").css("stroke-width", "4.5px");
+					$(".group:eq("+chosenChord.source.index+") path").css("stroke", "gold");
+					$(".group:eq("+chosenChord.target.index+") path").css("stroke-width", "4.5px");
+					$(".group:eq("+chosenChord.target.index+") path").css("stroke", "gold");
+					
+					showRows();
+				}
+			}
 		})
 		.on("mouseover", function(d) {
-			d3.select(this).style("cursor", "pointer");
-			
-			$(".group:eq("+d.source.index+") text").css("font-weight", "bold");
-			$(".group:eq("+d.target.index+") text").css("font-weight", "bold");
+			if(d.source.index != d.target.index) {
+				d3.select(this).style("cursor", "pointer");
+				
+				$(".group:eq("+d.source.index+") text").css("font-weight", "bold");
+				$(".group:eq("+d.target.index+") text").css("font-weight", "bold");
+				$(".group:eq("+d.source.index+") text").css("font-size", "15px");
+				$(".group:eq("+d.target.index+") text").css("font-size", "15px");
+			}
 		}).on("mouseout", function(d) {
-			d3.select(this).style("cursor", "default");
-			
-			$(".group:eq("+d.source.index+") text").css("font-weight", "normal");
-			$(".group:eq("+d.target.index+") text").css("font-weight", "normal");
+			if(d.source.index != d.target.index) {
+				d3.select(this).style("cursor", "default");
+				
+				$(".group:eq("+d.source.index+") text").css("font-weight", "normal");
+				$(".group:eq("+d.target.index+") text").css("font-weight", "normal");
+				$(".group:eq("+d.source.index+") text").css("font-size", "12px");
+				$(".group:eq("+d.target.index+") text").css("font-size", "12px");
+			}
 		});
 
 	chord.append("title").text(function(d) {
-		if(references[d.source.index][d.target.index] == "") {
-			return "no reference";
-		} else {
+		if(d.source.index != d.target.index) {
 			return references[d.source.index][d.target.index];
 		}
 	});
@@ -365,10 +408,13 @@ function drawStructuralChordDiagram() {
 		.attr("width", diagramWidth);
 	
 	var gradientWidth = 250;
+	var gradientWidthLeft = gradientWidth/2;
+	var gradientWidthNrRows = 250;
 	var gradientHeight = 20;
 	var gradientYMin = 30;
-	var gradientXMin = diagramWidth/2-(gradientWidth/2);
-	var gradientNrRowsYMin = 100;
+	var gradientXLeft = diagramWidth/4-gradientWidth/2;
+	var gradientXRight = diagramWidth/4;
+	var gradientXNrRows = diagramWidth/4*3-gradientWidth/2;
 
 	var defsLeft = legends.append("defs");
 	
@@ -378,16 +424,16 @@ function drawStructuralChordDiagram() {
 	linearGradientLeft
 		.attr("x1", 0)
 		.attr("y1", 0)
-		.attr("x2", gradientWidth/2)
+		.attr("x2", gradientWidthLeft)
 		.attr("y2", 0);
 		
 	linearGradientLeft.append("stop") 
 		.attr("x", 0)
-		.attr("y", gradientWidth/2)
+		.attr("y", gradientWidthLeft)
 		.attr("stop-color", cardinality_colors(0));
 
 	linearGradientLeft.append("stop") 
-		.attr("x", gradientWidth/2)
+		.attr("x", gradientWidthLeft)
 		.attr("y", 0)
 		.attr("stop-color", cardinality_colors(1));
 		
@@ -398,51 +444,43 @@ function drawStructuralChordDiagram() {
 		.enter().append("g");
 		
 	legendBar.append("text")
-		.attr("x", gradientXMin+gradientWidth/2)
+		.attr("x", gradientXLeft+gradientWidthLeft)
 		.attr("y", gradientYMin-5)
-		.attr("width", gradientWidth/2)
+		.attr("width", gradientWidth)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
 		.text(function(d) { return "Contraint Cardinality"; });
 		
 	legendBar.append("text")
-		.attr("x", gradientXMin+gradientWidth/2)
-		.attr("y", gradientNrRowsYMin-5)
-		.attr("width", gradientWidth/2)
+		.attr("x", gradientXNrRows+gradientWidth/2)
+		.attr("y", gradientYMin-5)
+		.attr("width", gradientWidth)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
 		.text(function(d) { return "Nr. Rows"; });
 			
 	legendBar.append("rect")
-		.attr("x", gradientXMin)
+		.attr("x", gradientXLeft)
 		.attr("y", gradientYMin)  
-		.attr("width", gradientWidth/2)
+		.attr("width", gradientWidthLeft)
 		.attr("height", gradientHeight)
 		.style("fill", "url(#linearGradientLeft)");
 		
 	legendBar.append("text")
-		.attr("x", gradientXMin)
+		.attr("x", gradientXLeft)
 		.attr("y", gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidth/2)
+		.attr("width", gradientWidthLeft)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
 		.text(function(d) { return "0%"; });
 		
 	legendBar.append("text")
-		.attr("x", gradientXMin+gradientWidth/2)
+		.attr("x", gradientXLeft+gradientWidthLeft)
 		.attr("y", gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidth/2)
+		.attr("width", gradientWidthLeft)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
 		.text(function(d) { return "100%"; });
-		
-	legendBar.append("text")
-		.attr("x", gradientXMin+gradientWidth)
-		.attr("y", gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidth/2)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return "200%"; });
 		
 	var defsRight = legends.append("defs");
 		
@@ -452,25 +490,33 @@ function drawStructuralChordDiagram() {
 	linearGradientRight
 		.attr("x1", 0)
 		.attr("y1", 0)
-		.attr("x2", gradientWidth/2)
+		.attr("x2", gradientWidthLeft)
 		.attr("y2", 0);
 		
 	linearGradientRight.append("stop") 
-		.attr("x", gradientWidth/2)
+		.attr("x", gradientWidthLeft)
 		.attr("y", 0)
 		.attr("stop-color", cardinality_colors(1));
 
 	linearGradientRight.append("stop") 
-		.attr("x", gradientWidth/2)
+		.attr("x", gradientWidthLeft)
 		.attr("y", 0)  
 		.attr("stop-color", cardinality_colors(2));
 		
 	legendBar.append("rect")
-		.attr("x", diagramWidth/2)
+		.attr("x", gradientXRight)
 		.attr("y", gradientYMin)
-		.attr("width", gradientWidth/2)
+		.attr("width", gradientWidthLeft)
 		.attr("height", gradientHeight)
 		.style("fill", "url(#linearGradientRight)");
+		
+	legendBar.append("text")
+		.attr("x", gradientXRight+gradientWidthLeft)
+		.attr("y", gradientYMin+gradientHeight+15)
+		.attr("width", gradientWidth)
+		.attr("height", 10)
+		.attr("text-anchor", "middle")
+		.text(function(d) { return "200%"; });
 		
 	var defsNrRows = legends.append("defs");
 	
@@ -494,23 +540,23 @@ function drawStructuralChordDiagram() {
 		.attr("stop-color", density_colors(density_colors.range().length-1));
 		
 	legendBar.append("rect")
-		.attr("x", gradientXMin)
-		.attr("y", gradientNrRowsYMin)
+		.attr("x", gradientXNrRows)
+		.attr("y", gradientYMin)
 		.attr("width", gradientWidth)
 		.attr("height", gradientHeight)
 		.style("fill", "url(#linearGradientNrRows)");
 		
 	legendBar.append("text")
-		.attr("x", gradientXMin)
-		.attr("y",gradientNrRowsYMin+gradientHeight+15)
+		.attr("x", gradientXNrRows)
+		.attr("y",gradientYMin+gradientHeight+15)
 		.attr("width", gradientWidth)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
 		.text(function(d) { return formatNumber(values_nr_rows_domain[0]); });
 		
 	legendBar.append("text")
-		.attr("x", gradientXMin+gradientWidth)
-		.attr("y",gradientNrRowsYMin+gradientHeight+15)
+		.attr("x", gradientXNrRows+gradientWidth)
+		.attr("y",gradientYMin+gradientHeight+15)
 		.attr("width", gradientWidth)
 		.attr("height", 10)
 		.attr("text-anchor", "middle")
@@ -656,7 +702,6 @@ function showAttributeInfo(index) {
 		}
 		
 		var cardinalityInfo = "";
-		var cardinalityLow = false;
 		var percent = attributeCardinalitiesPercentages[index][j]*100;
 		var attrCardinality = parseFloat(attributeCardinalities[index][j]);
 		if(attrCardinality <= lowCardinalityThreshold) {
@@ -664,10 +709,6 @@ function showAttributeInfo(index) {
 				cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
 			} else {
 				cardinalityInfo = "low ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
-			}
-			
-			if(key != "PRI") {
-				cardinalityLow = true;
 			}
 		} else if(attrCardinality >= 1) {
 			cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
@@ -701,8 +742,8 @@ function showAttributeInfo(index) {
 		choserContentOrder += "</select>";
 		
 		var histogramChooser = "";
-		if(cardinalityLow) {
-			histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+");' class='histogramIcon'>&nbsp;</div>";
+		if(key != "PRI") {
+			histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+", false, 0);' class='histogramIcon'>&nbsp;</div>";
 		}
 		
 		content += "<tr>"+choserContent+"<td>"+field+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+unit+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+histogramChooser+"</td><td>"+aggFunctionsHtml+"</td><td>"+choserContentOrder+"</td></tr>";
@@ -1189,13 +1230,9 @@ function showRows() {
 											for(var l = 0; l < attributes.length; l++) {
 												var attributeName = attributes[l].firstChild.textContent;
 												if(attributeName == resultHeader[i].orgname) {
-													var cardinalityLow = false;
 													var key = attributes[l].children[3].textContent;
-													if(attributeCardinalities[j][l] <= lowCardinalityThreshold && key != "PRI") {
-														cardinalityLow = true;
-													}
-													if(cardinalityLow) {
-														tableHeader += " <div onclick='prepareHistogram("+j+", &quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;, "+l+");' class='histogramIcon'>&nbsp;</div>";
+													if(key != "PRI") {
+														tableHeader += " <div onclick='prepareHistogram("+j+", &quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;, "+l+", true, "+limit+");' class='histogramIcon'>&nbsp;</div>";
 													}
 												}
 											}
@@ -1223,7 +1260,7 @@ function showRows() {
 			}
 		});
 	} else {
-		document.getElementById("query").innerHTML = "<p>Choose some tables to create a SELECT statement.</p>";
+		document.getElementById("query").innerHTML = "<p>Click some tables while holding the Ctrl-Key to run a query.</p>";
 		document.getElementById("rowsTable").innerHTML = "";
 	}
 }
@@ -1270,58 +1307,112 @@ function getOrderByFunctions() {
 	return ["None", "ASC", "DESC"];
 }
 
-function prepareHistogram(tableId, table, attribute, attributeId) {
-	var query = "SELECT "+attribute+", COUNT("+attribute+") FROM "+table+" GROUP BY "+attribute;
+function prepareHistogram(tableId, table, attribute, attributeId, limitSet, limit) {
+	var nrAttributes = parseFloat(attributeCardinalities[tableId][attributeId]);
 	
-	var resultRows = "";			
-	jQuery.ajax({
-		type: "POST",
-		url: 'requests.php',
-		dataType: 'json',
-		data: {functionname: 'processQueryRequest', argument: query},
+	if(limitSet || nrAttributes <= 100 || confirm('You chose to see a histogram from "'+table+'" showing "'+attribute+'" with '+formatNumber(nrAttributes)+' different attribute values. Do you really want to continue?')) {
+		if(limitSet) {
+			var query = "SELECT "+attribute+", COUNT("+attribute+") FROM (SELECT * FROM "+table+" LIMIT 10) t GROUP BY "+attribute;
+			
+			var resultRows = "";			
+			jQuery.ajax({
+				type: "POST",
+				url: 'requests.php',
+				dataType: 'json',
+				data: {functionname: 'processQueryRequest', argument: query},
 
-		success: function (obj, textstatus) {
-			if(!('error' in obj) ) {
-				resultRows = obj.result;
-								
-				var widthNewWindow = (window.innerWidth)*3/4;
-				var heightNewWindow = (window.innerHeight)*8/9;
-				
-				var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
-				
-				newWindow.onunload = function() {
-					for(var i = 0; i < tables.length; i++) {
-						histogramChosenValues[i] = [];
+				success: function (obj, textstatus) {
+					if(!('error' in obj) ) {
+						resultRows = obj.result;
+										
+						var widthNewWindow = window.innerWidth/2;
+						var heightNewWindow = window.innerHeight/2;
+						
+						var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
+						
+						newWindow.onunload = function() {
+							for(var i = 0; i < tables.length; i++) {
+								histogramChosenValues[i] = [];
+									
+								var attributes = tables[i].children[2].children;
+								for(var k = 0; k < attributes.length; k++) {
+									histogramChosenValues[i][k] = undefined;
+								}
+							}
 							
-						var attributes = tables[i].children[2].children;
-						for(var k = 0; k < attributes.length; k++) {
-							histogramChosenValues[i][k] = undefined;
-						}
+							showRows();
+						};
+						
+						var newWindowRoot = d3.select(newWindow.document.body)
+							.style("font-family", "Arial, Helvetica, sans-serif")
+							.style("background-color", "#fcfcfc")
+							.style("font-size", "15px");
+						
+						newWindowRoot.append("div").append("p")
+							.html("Table: "+table+", Attribute: "+attribute);
+						
+						var newWindowChart = newWindowRoot.append("div");
+							
+						drawHistogram(newWindow, newWindowChart, tableId, attributeId, resultRows);
 					}
-					
-					showRows();
-				};
-				
-				var newWindowRoot = d3.select(newWindow.document.body)
-					.style("font-family", "Arial, Helvetica, sans-serif")
-					.style("background-color", "#fcfcfc")
-					.style("font-size", "15px");
-				
-				newWindowRoot.append("div").append("h2")
-					.html("Table: "+table+", Attribute: "+attribute)
-					.style("color", "#000066");
-				
-				var newWindowChart = newWindowRoot.append("div");
-					
-				drawHistogram(newWindowChart, tableId, attributeId, resultRows);
-			}
+				}
+			});
+		} else {
+			var query = "SELECT "+attribute+", COUNT("+attribute+") FROM "+table+" GROUP BY "+attribute;
+			
+			var resultRows = "";			
+			jQuery.ajax({
+				type: "POST",
+				url: 'requests.php',
+				dataType: 'json',
+				data: {functionname: 'processQueryRequest', argument: query},
+
+				success: function (obj, textstatus) {
+					if(!('error' in obj) ) {
+						resultRows = obj.result;
+										
+						var widthNewWindow = window.innerWidth/2;
+						var heightNewWindow = window.innerHeight/2;
+						
+						var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
+						
+						newWindow.onunload = function() {
+							for(var i = 0; i < tables.length; i++) {
+								histogramChosenValues[i] = [];
+									
+								var attributes = tables[i].children[2].children;
+								for(var k = 0; k < attributes.length; k++) {
+									histogramChosenValues[i][k] = undefined;
+								}
+							}
+							
+							showRows();
+						};
+						
+						var newWindowRoot = d3.select(newWindow.document.body)
+							.style("font-family", "Arial, Helvetica, sans-serif")
+							.style("background-color", "#fcfcfc")
+							.style("font-size", "15px");
+						
+						newWindowRoot.append("div").append("p")
+							.html("Table: "+table+", Attribute: "+attribute);
+						
+						var newWindowChart = newWindowRoot.append("div");
+							
+						drawHistogram(newWindow, newWindowChart, tableId, attributeId, resultRows);
+					}
+				}
+			});
 		}
-	});
+	}
 }
 
-function drawHistogram(newWindowRoot, tableId, attributeId, data) {
+function drawHistogram(newWindow, newWindowRoot, tableId, attributeId, data) {
+	var windowWidth = newWindow.innerWidth;
+	var windowHeight = newWindow.innerHeight;
+	
 	var nr_bars = data.length;
-	var width_calculated = 25 * nr_bars;
+	var width_calculated = 20 * nr_bars;
 	
 	var margin = {top: 50, right: 150, bottom: 150, left: 150},
 		width = 300 + width_calculated - margin.left - margin.right,
@@ -1336,8 +1427,7 @@ function drawHistogram(newWindowRoot, tableId, attributeId, data) {
 		
 	var yAxis = d3.svg.axis()
 		.scale(y)
-		.orient("left")
-		.ticks(10);
+		.orient("left");
 
 	var svg = newWindowRoot.append("svg")
 		.attr("width", width + margin.left + margin.right)
@@ -1347,8 +1437,7 @@ function drawHistogram(newWindowRoot, tableId, attributeId, data) {
 				"translate(" + margin.left + "," + margin.top + ")");
 		
 	x.domain(data.map(function(d) { return d[0]; }));
-	y.domain([0, d3.max(data, function(d) { return d[1]; })]);
-	//y.domain([0, d3.sum(data, function(d) { return d[1]; })]);
+	y.domain([0, d3.max(data, function(d) { return parseFloat(d[1]); })]);
 
 	svg.append("g")
 		.attr("class", "x axis")
@@ -1357,8 +1446,8 @@ function drawHistogram(newWindowRoot, tableId, attributeId, data) {
 		.selectAll("text")
 			.style("text-anchor", "end")
 			.attr("dx", "-.8em")
-			.attr("dy", ".35em")
-			.style("font-size", "14px")  
+			.attr("dy", "-.3em")
+			.style("font-size", "12px")
 			.attr("transform", "rotate(-90)" );
 
 	svg.append("g")
@@ -1366,9 +1455,10 @@ function drawHistogram(newWindowRoot, tableId, attributeId, data) {
 		.call(yAxis)
 		.append("text")
 			.attr("transform", "rotate(-90)")
-			.attr("y", 6)
+			.attr("y", 5)
 			.attr("dy", "-80")
 			.style("text-anchor", "end")
+			.style("font-size", "12px")  
 			.text("Occurences Of");
 
 	svg.selectAll("bar")
@@ -1380,9 +1470,21 @@ function drawHistogram(newWindowRoot, tableId, attributeId, data) {
 			.attr("y", function(d) { return y(d[1]); })
 			.attr("height", function(d) { return height - y(d[1]); })
 			.on("click", function(d) {
+				svg.selectAll("rect").style("fill", "steelblue");
+				
+				for(var i = 0; i < tables.length; i++) {
+					histogramChosenValues[i] = [];
+						
+					var attributes = tables[i].children[2].children;
+					for(var k = 0; k < attributes.length; k++) {
+						histogramChosenValues[i][k] = undefined;
+					}
+				}
+				
 				if(checkHistogramChosenValue(tableId, attributeId)) {
 					setHistogramChosenValue(tableId, attributeId, undefined);
 				} else {
+					d3.select(this).style("fill", "deepskyblue");
 					setHistogramChosenValue(tableId, attributeId, d[0]);
 				}
 				
@@ -1390,6 +1492,7 @@ function drawHistogram(newWindowRoot, tableId, attributeId, data) {
 			});
 		
 	svg.selectAll("rect").append("title")
+		.style("font-size", "12px")  
 		.text(function(d) {
 			var percent = d[1] / d3.sum(data, function(d) { return d[1]; }) * 100;
 			return d[0]+": "+d[1]+" ("+formatNumber(percent) +"%)";

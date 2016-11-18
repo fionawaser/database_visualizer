@@ -215,13 +215,16 @@ function drawStructuralChordDiagram() {
 		}
 	}
 	var values_nr_rows_range = [];
-	for(var n = 0; n < values_nr_rows_domain.length; n++) {
+	for(var n = 0; n < tables.length; n++) {
 		values_nr_rows_range[n] = density_color_picker(n);
 	}
 	
 	var density_colors = d3.scale.linear()
 		.domain(values_nr_rows_domain)
 		.range(values_nr_rows_range);
+		
+	console.log(values_nr_rows_domain);
+	console.log(values_nr_rows_range);
 	
 	var cardinality_colors = d3.scale.linear()
 		.domain([0, 1, 1.01, 2])
@@ -403,164 +406,150 @@ function drawStructuralChordDiagram() {
 			return references[d.source.index][d.target.index];
 		}
 	});
-		
-	var legends = d3.select("#legends").append("svg")
-		.attr("width", diagramWidth);
 	
 	var gradientWidth = 250;
-	var gradientWidthLeft = gradientWidth/2;
-	var gradientWidthNrRows = 250;
 	var gradientHeight = 20;
-	var gradientYMin = 30;
-	var gradientXLeft = diagramWidth/4-gradientWidth/2;
-	var gradientXRight = diagramWidth/4;
-	var gradientXNrRows = diagramWidth/4*3-gradientWidth/2;
-
-	var defsLeft = legends.append("defs");
+	var gradientYMin = 0;
+	var gradientXCardinality = $("#legendCardinality").width()/2-gradientWidth/2;
+	var gradientXNrRows = $("#legendNrRows").width()/2-gradientWidth/2;
 	
-	var linearGradientLeft = defsLeft.append("linearGradient")
-		.attr("id", "linearGradientLeft");
+	var legendCardinalityTitle = document.getElementById('legendCardinalityTitle');
+	legendCardinalityTitle.style.margin = "auto";
+	legendCardinalityTitle.style.textAlign = "center";
+	legendCardinalityTitle.style.width = gradientWidth;
+	legendCardinalityTitle.style.height = gradientHeight;
+	
+	var legendCardinalityGradient = document.getElementById('legendCardinalityGradient');
+	legendCardinalityGradient.style.position = "relative";
+	legendCardinalityGradient.style.width = gradientWidth;
+	legendCardinalityGradient.style.height = gradientHeight;
+	legendCardinalityGradient.style.left = gradientXCardinality+'px';
+	legendCardinalityGradient.style.top = gradientYMin+'px';
+	legendCardinalityGradient.style.border = "thin solid black";
+	
+	var gradientCardinality = d3.select("#legendCardinalityGradient").append("svg")
+		.attr("width", gradientWidth)
+		.attr("height", gradientHeight);
+	
+	var gradCardinality = gradientCardinality.append("defs")
+		.append("linearGradient")
+			.attr("id", "cardinalityGradient")
+			.attr("x1", 0)
+			.attr("y1", 0)
+			.attr("x2", "100%")
+			.attr("y2", 0)
+			.attr("spreadMethod", "repeat");
 		
-	linearGradientLeft
-		.attr("x1", 0)
-		.attr("y1", 0)
-		.attr("x2", gradientWidthLeft)
-		.attr("y2", 0);
+	gradCardinality.append("stop")
+		.attr("offset", "0%")
+		.attr("stop-color", cardinality_colors(0))
+		.attr("stop-opacity", 1);
 		
-	linearGradientLeft.append("stop") 
-		.attr("x", 0)
-		.attr("y", gradientWidthLeft)
-		.attr("stop-color", cardinality_colors(0));
+	gradCardinality.append("stop")
+		.attr("offset", "50%")
+		.attr("stop-color", cardinality_colors(1))
+		.attr("stop-opacity", 1);
+		
+	gradCardinality.append("stop")
+		.attr("offset", "51%")
+		.attr("stop-color", cardinality_colors(1.01))
+		.attr("stop-opacity", 1);
 
-	linearGradientLeft.append("stop") 
-		.attr("x", gradientWidthLeft)
-		.attr("y", 0)
-		.attr("stop-color", cardinality_colors(1));
+	gradCardinality.append("stop")
+		.attr("offset", "100%")
+		.attr("stop-color", cardinality_colors(2))
+		.attr("stop-opacity", 1);
 		
-	var legendTitle = ["LegendTitle"];
-		
-	var legendBar = legends.selectAll("g")
-		.data(legendTitle)
-		.enter().append("g");
-		
-	legendBar.append("text")
-		.attr("x", gradientXLeft+gradientWidthLeft)
-		.attr("y", gradientYMin-5)
+	gradientCardinality.append("rect")
 		.attr("width", gradientWidth)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return "Contraint Cardinality"; });
-		
-	legendBar.append("text")
-		.attr("x", gradientXNrRows+gradientWidth/2)
-		.attr("y", gradientYMin-5)
+		.attr("height", gradientHeight)
+		.style("fill", "url(#cardinalityGradient)");
+	
+	var legendCardinalityLegend = document.getElementById('legendCardinalityLegend');
+	legendCardinalityLegend.style.width = "100%";
+	legendCardinalityLegend.style.height = gradientHeight;
+	
+	var legendCardinalityLegend0 = document.getElementById('legendCardinalityLegend0');
+	legendCardinalityLegend0.innerHTML = "0%";
+	legendCardinalityLegend0.style.marginLeft = gradientXCardinality+'px';
+	legendCardinalityLegend0.style.width = gradientWidth/3;
+	legendCardinalityLegend0.style.height = gradientHeight;
+	legendCardinalityLegend0.style.display = "inline-block";
+	
+	var legendCardinalityLegend1 = document.getElementById('legendCardinalityLegend1');
+	legendCardinalityLegend1.innerHTML = "100%";
+	legendCardinalityLegend1.style.width = gradientWidth/3;
+	legendCardinalityLegend1.style.height = gradientHeight;
+	legendCardinalityLegend1.style.display = "inline-block";
+	legendCardinalityLegend1.style.margin = "auto";
+	legendCardinalityLegend1.style.textAlign = "center";
+	
+	var legendCardinalityLegend2 = document.getElementById('legendCardinalityLegend2');
+	legendCardinalityLegend2.innerHTML = "200%";
+	legendCardinalityLegend2.style.width = gradientWidth/3;
+	legendCardinalityLegend2.style.verticalAlign = "top";
+	legendCardinalityLegend2.style.height = gradientHeight;
+	legendCardinalityLegend2.style.display = "inline-block";
+	legendCardinalityLegend2.style.margin = "auto";
+	legendCardinalityLegend2.style.textAlign = "right";
+	
+	var legendNrRowsGradient = document.getElementById('legendNrRowsGradient');
+	legendNrRowsGradient.style.position = "relative";
+	legendNrRowsGradient.style.width = gradientWidth;
+	legendNrRowsGradient.style.height = gradientHeight;
+	legendNrRowsGradient.style.left = gradientXNrRows+'px';
+	legendNrRowsGradient.style.top = gradientYMin+'px';
+	legendNrRowsGradient.style.border = "thin solid black";
+	
+	var legendCardinalityTitle = document.getElementById('legendNrRowsTitle');
+	legendCardinalityTitle.style.margin = "auto";
+	legendCardinalityTitle.style.textAlign = "center";
+	legendCardinalityTitle.style.width = gradientWidth;
+	legendCardinalityTitle.style.height = gradientHeight;
+	
+	var gradientNrRows = d3.select("#legendNrRowsGradient").append("svg")
 		.attr("width", gradientWidth)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return "Nr. Rows"; });
+		.attr("height", gradientHeight);
+	
+	var gradNrRows = gradientNrRows.append("defs")
+		.append("linearGradient")
+			.attr("id", "nrRowsGradient")
+			.attr("x1", 0)
+			.attr("y1", 0)
+			.attr("x2", "100%")
+			.attr("y2", 0)
+			.attr("spreadMethod", "repeat");
+		
+	gradNrRows.append("stop")
+		.attr("offset", "0%")
+		.attr("stop-color", density_colors(0))
+		.attr("stop-opacity", 1);
+
+	gradNrRows.append("stop")
+		.attr("offset", "100%")
+		.attr("stop-color", density_colors(density_colors.range().length-1))
+		.attr("stop-opacity", 1);
+		
+	gradientNrRows.append("rect")
+		.attr("width", gradientWidth)
+		.attr("height", gradientHeight)
+		.style("fill", "url(#nrRowsGradient)");
 			
-	legendBar.append("rect")
-		.attr("x", gradientXLeft)
-		.attr("y", gradientYMin)  
-		.attr("width", gradientWidthLeft)
-		.attr("height", gradientHeight)
-		.style("fill", "url(#linearGradientLeft)");
-		
-	legendBar.append("text")
-		.attr("x", gradientXLeft)
-		.attr("y", gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidthLeft)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return "0%"; });
-		
-	legendBar.append("text")
-		.attr("x", gradientXLeft+gradientWidthLeft)
-		.attr("y", gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidthLeft)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return "100%"; });
-		
-	var defsRight = legends.append("defs");
-		
-	var linearGradientRight = defsRight.append("linearGradient")
-		.attr("id", "linearGradientRight");
-		
-	linearGradientRight
-		.attr("x1", 0)
-		.attr("y1", 0)
-		.attr("x2", gradientWidthLeft)
-		.attr("y2", 0);
-		
-	linearGradientRight.append("stop") 
-		.attr("x", gradientWidthLeft)
-		.attr("y", 0)
-		.attr("stop-color", cardinality_colors(1));
-
-	linearGradientRight.append("stop") 
-		.attr("x", gradientWidthLeft)
-		.attr("y", 0)  
-		.attr("stop-color", cardinality_colors(2));
-		
-	legendBar.append("rect")
-		.attr("x", gradientXRight)
-		.attr("y", gradientYMin)
-		.attr("width", gradientWidthLeft)
-		.attr("height", gradientHeight)
-		.style("fill", "url(#linearGradientRight)");
-		
-	legendBar.append("text")
-		.attr("x", gradientXRight+gradientWidthLeft)
-		.attr("y", gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidth)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return "200%"; });
-		
-	var defsNrRows = legends.append("defs");
+	var legendNrRowsLegend0 = document.getElementById('legendNrRowsLegend0');
+	legendNrRowsLegend0.innerHTML = formatNumber(values_nr_rows_domain[0]);
+	legendNrRowsLegend0.style.marginLeft = gradientXCardinality+'px';
+	legendNrRowsLegend0.style.width = gradientWidth/2;
+	legendNrRowsLegend0.style.height = gradientHeight;
+	legendNrRowsLegend0.style.display = "inline-block";
 	
-	var linearGradientNrRows = defsLeft.append("linearGradient")
-		.attr("id", "linearGradientNrRows");
-		
-	linearGradientNrRows
-		.attr("x1", 0)
-		.attr("y1", 0)
-		.attr("x2", gradientWidth)
-		.attr("y2", 0);
-		
-	linearGradientNrRows.append("stop") 
-		.attr("x", 0)
-		.attr("y", gradientWidth)
-		.attr("stop-color", density_colors(0));
-
-	linearGradientNrRows.append("stop") 
-		.attr("x", 0)
-		.attr("y", gradientWidth)
-		.attr("stop-color", density_colors(density_colors.range().length-1));
-		
-	legendBar.append("rect")
-		.attr("x", gradientXNrRows)
-		.attr("y", gradientYMin)
-		.attr("width", gradientWidth)
-		.attr("height", gradientHeight)
-		.style("fill", "url(#linearGradientNrRows)");
-		
-	legendBar.append("text")
-		.attr("x", gradientXNrRows)
-		.attr("y",gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidth)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return formatNumber(values_nr_rows_domain[0]); });
-		
-	legendBar.append("text")
-		.attr("x", gradientXNrRows+gradientWidth)
-		.attr("y",gradientYMin+gradientHeight+15)
-		.attr("width", gradientWidth)
-		.attr("height", 10)
-		.attr("text-anchor", "middle")
-		.text(function(d) { return formatNumber(values_nr_rows_domain[values_nr_rows_domain.length-1]); });
+	var legendNrRowsLegend1 = document.getElementById('legendNrRowsLegend1');
+	legendNrRowsLegend1.innerHTML = formatNumber(values_nr_rows_domain[values_nr_rows_domain.length-1]);
+	legendNrRowsLegend1.style.width = gradientWidth/2;
+	legendNrRowsLegend1.style.verticalAlign = "top";
+	legendNrRowsLegend1.style.height = gradientHeight;
+	legendNrRowsLegend1.style.display = "inline-block";
+	legendNrRowsLegend1.style.margin = "auto";
+	legendNrRowsLegend1.style.textAlign = "right";
 }
 
 function getDensityRange(values) {
@@ -743,7 +732,7 @@ function showAttributeInfo(index) {
 		
 		var histogramChooser = "";
 		if(key != "PRI") {
-			histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+", false, 0);' class='histogramIcon'>&nbsp;</div>";
+			histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+", &quot;&quot;);' class='histogramIcon'>&nbsp;</div>";
 		}
 		
 		content += "<tr>"+choserContent+"<td>"+field+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+unit+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+histogramChooser+"</td><td>"+aggFunctionsHtml+"</td><td>"+choserContentOrder+"</td></tr>";
@@ -1232,7 +1221,7 @@ function showRows() {
 												if(attributeName == resultHeader[i].orgname) {
 													var key = attributes[l].children[3].textContent;
 													if(key != "PRI") {
-														tableHeader += " <div onclick='prepareHistogram("+j+", &quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;, "+l+", true, "+limit+");' class='histogramIcon'>&nbsp;</div>";
+														tableHeader += " <div onclick='prepareHistogram("+j+", &quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;, "+l+", &quot;"+query+"&quot;);' class='histogramIcon'>&nbsp;</div>";
 													}
 												}
 											}
@@ -1307,57 +1296,11 @@ function getOrderByFunctions() {
 	return ["None", "ASC", "DESC"];
 }
 
-function prepareHistogram(tableId, table, attribute, attributeId, limitSet, limit) {
+function prepareHistogram(tableId, table, attribute, attributeId, oldQuery) {
 	var nrAttributes = parseFloat(attributeCardinalities[tableId][attributeId]);
 	
-	if(limitSet || nrAttributes <= 100 || confirm('You chose to see a histogram from "'+table+'" showing "'+attribute+'" with '+formatNumber(nrAttributes)+' different attribute values. Do you really want to continue?')) {
-		if(limitSet) {
-			var query = "SELECT "+attribute+", COUNT("+attribute+") FROM (SELECT * FROM "+table+" LIMIT 10) t GROUP BY "+attribute;
-			
-			var resultRows = "";			
-			jQuery.ajax({
-				type: "POST",
-				url: 'requests.php',
-				dataType: 'json',
-				data: {functionname: 'processQueryRequest', argument: query},
-
-				success: function (obj, textstatus) {
-					if(!('error' in obj) ) {
-						resultRows = obj.result;
-										
-						var widthNewWindow = window.innerWidth/2;
-						var heightNewWindow = window.innerHeight/2;
-						
-						var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
-						
-						newWindow.onunload = function() {
-							for(var i = 0; i < tables.length; i++) {
-								histogramChosenValues[i] = [];
-									
-								var attributes = tables[i].children[2].children;
-								for(var k = 0; k < attributes.length; k++) {
-									histogramChosenValues[i][k] = undefined;
-								}
-							}
-							
-							showRows();
-						};
-						
-						var newWindowRoot = d3.select(newWindow.document.body)
-							.style("font-family", "Arial, Helvetica, sans-serif")
-							.style("background-color", "#fcfcfc")
-							.style("font-size", "15px");
-						
-						newWindowRoot.append("div").append("p")
-							.html("Table: "+table+", Attribute: "+attribute);
-						
-						var newWindowChart = newWindowRoot.append("div");
-							
-						drawHistogram(newWindow, newWindowChart, tableId, attributeId, resultRows);
-					}
-				}
-			});
-		} else {
+	if(oldQuery == "") {
+		if(nrAttributes <= 100 || confirm('You chose to see a histogram from "'+table+'" showing "'+attribute+'" with '+formatNumber(nrAttributes)+' different attribute values. Do you really want to continue?')) {
 			var query = "SELECT "+attribute+", COUNT("+attribute+") FROM "+table+" GROUP BY "+attribute;
 			
 			var resultRows = "";			
@@ -1373,53 +1316,115 @@ function prepareHistogram(tableId, table, attribute, attributeId, limitSet, limi
 										
 						var widthNewWindow = window.innerWidth/2;
 						var heightNewWindow = window.innerHeight/2;
-						
+							
 						var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
-						
+							
 						newWindow.onunload = function() {
 							for(var i = 0; i < tables.length; i++) {
 								histogramChosenValues[i] = [];
-									
+										
 								var attributes = tables[i].children[2].children;
 								for(var k = 0; k < attributes.length; k++) {
 									histogramChosenValues[i][k] = undefined;
 								}
 							}
-							
+								
 							showRows();
 						};
 						
-						var newWindowRoot = d3.select(newWindow.document.body)
-							.style("font-family", "Arial, Helvetica, sans-serif")
-							.style("background-color", "#fcfcfc")
-							.style("font-size", "15px");
-						
-						newWindowRoot.append("div").append("p")
-							.html("Table: "+table+", Attribute: "+attribute);
-						
-						var newWindowChart = newWindowRoot.append("div");
+						newWindow.onresize = function(event) {
+							width = event.target.outerWidth;
+							height = event.target.outerHeight;
 							
-						drawHistogram(newWindow, newWindowChart, tableId, attributeId, resultRows);
+							newWindow.document.getElementsByTagName('body')[0].innerHTML = '';
+							
+							drawHistogram(width, height, newWindow, table, attribute, tableId, attributeId, resultRows);
+						};
+								
+						drawHistogram(widthNewWindow, heightNewWindow, newWindow, table, attribute, tableId, attributeId, resultRows);
 					}
 				}
 			});
 		}
+	} else {
+		var query = "SELECT "+attribute+", COUNT("+attribute+") FROM ("+oldQuery+") m GROUP BY "+attribute;
+			
+		var resultRows = "";			
+		jQuery.ajax({
+			type: "POST",
+			url: 'requests.php',
+			dataType: 'json',
+			data: {functionname: 'processQueryRequest', argument: query},
+
+			success: function (obj, textstatus) {
+				if(!('error' in obj) ) {
+					resultRows = obj.result;
+										
+					var widthNewWindow = window.innerWidth/2;
+					var heightNewWindow = window.innerHeight/2;
+						
+					var newWindow = window.open("", "Histogram", "height="+heightNewWindow+",width="+widthNewWindow);
+						
+					newWindow.onunload = function() {
+						for(var i = 0; i < tables.length; i++) {
+							histogramChosenValues[i] = [];
+									
+							var attributes = tables[i].children[2].children;
+							for(var k = 0; k < attributes.length; k++) {
+								histogramChosenValues[i][k] = undefined;
+							}
+						}
+							
+						showRows();
+					};
+					
+					newWindow.onresize = function(event) {
+						width = event.target.outerWidth;
+						height = event.target.outerHeight;
+						
+						newWindow.document.getElementsByTagName('body')[0].innerHTML = '';
+							
+						drawHistogram(width, height, newWindow, table, attribute, tableId, attributeId, resultRows);
+					};
+							
+					drawHistogram(widthNewWindow, heightNewWindow, newWindow, table, attribute, tableId, attributeId, resultRows);
+				}
+			}
+		});
 	}
 }
 
-function drawHistogram(newWindow, newWindowRoot, tableId, attributeId, data) {
-	var windowWidth = newWindow.innerWidth;
-	var windowHeight = newWindow.innerHeight;
+function drawHistogram(widthNewWindow, heightNewWindow, newWindow, tableName, attributeName, tableId, attributeId, data) {
+	var newWindowRoot = d3.select(newWindow.document.body)
+		.style("font-family", "Arial, Helvetica, sans-serif")
+		.style("background-color", "#fcfcfc")
+		.style("font-size", "15px");
+						
+	newWindowRoot.append("div").append("p")
+		.html("Table: "+tableName+", Attribute: "+attributeName);
+						
+	var newWindowChart = newWindowRoot.append("div");
 	
-	var nr_bars = data.length;
-	var width_calculated = 20 * nr_bars;
+	var nrBars = data.length;
+	var widthCalculated = 20*nrBars + 10*nrBars;
 	
-	var margin = {top: 50, right: 150, bottom: 150, left: 150},
-		width = 300 + width_calculated - margin.left - margin.right,
-		height = 650 - margin.top - margin.bottom;
+	var actualWidth = widthCalculated;
+	if(widthCalculated < widthNewWindow/2) {
+		actualWidth = widthNewWindow/2;
+	}
+	
+	var minHeight = 500;
+	var actualHeight = heightNewWindow;
+	if(heightNewWindow < minHeight) {
+		actualHeight = minHeight;
+	}
+	
+	var margin = {top: 20, right: 20, bottom: 150, left: 100},
+		width = actualWidth - margin.left - margin.right,
+		height = actualHeight - margin.top - margin.bottom;
 
-	var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
-	var y = d3.scale.linear().range([height, 0]);
+	var x = d3.scale.ordinal().rangeRoundBands([0, width]);
+	var y = d3.scale.linear().range([height - margin.bottom, 0]);
 
 	var xAxis = d3.svg.axis()
 		.scale(x)
@@ -1429,7 +1434,7 @@ function drawHistogram(newWindow, newWindowRoot, tableId, attributeId, data) {
 		.scale(y)
 		.orient("left");
 
-	var svg = newWindowRoot.append("svg")
+	var svg = newWindowChart.append("svg")
 		.attr("width", width + margin.left + margin.right)
 		.attr("height", height + margin.top + margin.bottom)
 		.append("g")
@@ -1441,12 +1446,14 @@ function drawHistogram(newWindow, newWindowRoot, tableId, attributeId, data) {
 
 	svg.append("g")
 		.attr("class", "x axis")
-		.attr("transform", "translate(0," + height + ")")
+		.attr("transform", "translate(0," + (height - margin.bottom) + ")")
 		.call(xAxis)
+		.selectAll(".tick")
+			.attr("transform", function(d, i) { return "translate(" + (width/nrBars*i) + ",0)"; })
 		.selectAll("text")
 			.style("text-anchor", "end")
 			.attr("dx", "-.8em")
-			.attr("dy", "-.3em")
+			.attr("dy", ".5em")
 			.style("font-size", "12px")
 			.attr("transform", "rotate(-90)" );
 
@@ -1465,10 +1472,10 @@ function drawHistogram(newWindow, newWindowRoot, tableId, attributeId, data) {
 		.data(data)
 		.enter().append("rect")
 			.style("fill", "steelblue")
-			.attr("x", function(d) { return x(d[0]); })
-			.attr("width", x.rangeBand())
-			.attr("y", function(d) { return y(d[1]); })
-			.attr("height", function(d) { return height - y(d[1]); })
+			.attr("x", function(d, i) { return width/nrBars*i; }) //x(d[0])
+			.attr("width", 20) //x.rangeBand()
+			.attr("y", function(d) { return y(parseFloat(d[1])); })
+			.attr("height", function(d) { return height - margin.bottom - y(d[1]); })
 			.on("click", function(d) {
 				svg.selectAll("rect").style("fill", "steelblue");
 				
@@ -1494,8 +1501,8 @@ function drawHistogram(newWindow, newWindowRoot, tableId, attributeId, data) {
 	svg.selectAll("rect").append("title")
 		.style("font-size", "12px")  
 		.text(function(d) {
-			var percent = d[1] / d3.sum(data, function(d) { return d[1]; }) * 100;
-			return d[0]+": "+d[1]+" ("+formatNumber(percent) +"%)";
+			var percent = d[1] / d3.sum(data, function(d) { return parseFloat(d[1]); }) * 100;
+			return d[0]+": "+formatNumber(parseFloat(d[1]))+" ("+formatNumber(percent) +"%)";
 		});
 }
 

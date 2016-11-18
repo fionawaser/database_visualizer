@@ -67,7 +67,10 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 	</div>
 	<div id="content">
 		<div id="leftSidebar">
-			<div id="legends"></div>
+			<div id="legends">
+				<div id="legendCardinality"><div id="legendCardinalityTitle">Contraint Cardinality</div><div id="legendCardinalityGradient"></div><div id="legendCardinalityLegend"><div id="legendCardinalityLegend0"></div><div id="legendCardinalityLegend1"></div><div id="legendCardinalityLegend2"></div></div></div>
+				<div id="legendNrRows"><div id="legendNrRowsTitle">Nr. Rows</div><div id="legendNrRowsGradient"></div><div id="legendNrRowsLegend"><div id="legendNrRowsLegend0"></div><div id="legendNrRowsLegend1"></div></div></div>
+			</div>
 			<div id="diagram"></div>
 		</div>
 		<div id="rightSidebar">

@@ -129,6 +129,7 @@ ul.nav li a:hover {
 	font-size: 15px;
 	background-color: #fcfcfc;
 	color: black;
+	cursor: help;
 }
 
 .queryControlWords {
@@ -151,6 +152,18 @@ ul.nav li a:hover {
 	float: left;
 	width: 100%;
 	height: 100px;
+}
+
+#legendCardinality {
+	width: 50%;
+	height: 100%;
+	float: left;
+}
+
+#legendNrRows {
+	width: 50%;
+	height: 100%;
+	float: right;
 }
 
 #query {

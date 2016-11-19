@@ -51,6 +51,7 @@ function getMetadata($con, $db_name) {
 	$tables = getTableCounts($con, $tables);
 	$tables = getAttributes($con, $tables);
 	$tables = getConstraints($con, $tables, $db_name);
+	$tables = findBridgeTables($tables);
 	$tables->asXml("tables.xml");
 }
 
@@ -71,24 +72,24 @@ function getTables($con, $tables) {
 }
 
 function getTableCounts($con, $tables) {
-	$new_tables = $tables;
+	$newTables = $tables;
 	
 	$i = 0;
 	foreach($tables->table as $table) {
 		$query = "SELECT COUNT(*) FROM ".$table->name;
 		$res = mysqli_query($con, $query);
 		
-		$new_tables->table[$i]->nr_rows = mysqli_fetch_row($res)[0];
+		$newTables->table[$i]->nr_rows = mysqli_fetch_row($res)[0];
 		
 		$i++;
 	}
 	mysqli_free_result($res);
 	
-	return $new_tables;
+	return $newTables;
 }
 
 function getAttributes($con, $tables) {
-	$new_tables = $tables;
+	$newTables = $tables;
 	
 	$i = 0;
 	foreach($tables->table as $table) {
@@ -97,7 +98,7 @@ function getAttributes($con, $tables) {
 		$query = "SHOW COLUMNS FROM ".$table->name;
 		$res = mysqli_query($con, $query);
 		
-		$attributes = $new_tables->table[$i]->addChild("attributes", "");
+		$attributes = $newTables->table[$i]->addChild("attributes", "");
 		if(mysqli_num_rows($res)) {
 			while($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
 				$attribute = $attributes->addChild("attribute", "");
@@ -131,19 +132,16 @@ function getAttributes($con, $tables) {
 				}
 			}
 		}
-		if($attributes->attribute->count() == $nr_pri) {
-			$new_tables->table[$i]->addAttribute("isJoinTable", true);
-		}
 		
 		$i++;
 	}
 	mysqli_free_result($res);
 	
-	return $new_tables;
+	return $newTables;
 }
 
 function getConstraints($con, $tables, $dbname) {
-	$new_tables = $tables;
+	$newTables = $tables;
 	
 	$query = "SELECT * FROM information_schema.table_constraints WHERE constraint_schema = '".$dbname."' and constraint_type != 'PRIMARY KEY'";
 	$res = mysqli_query($con, $query);
@@ -154,7 +152,7 @@ function getConstraints($con, $tables, $dbname) {
 			$query = "SELECT COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_COLUMN_NAME, REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = '".$table->name."' AND TABLE_SCHEMA = '".$dbname."'";
 			$res = mysqli_query($con, $query);
 						
-			$constraints = $new_tables->table[$i]->addChild("constraints", "");
+			$constraints = $newTables->table[$i]->addChild("constraints", "");
 			if(mysqli_num_rows($res)) {
 				while($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
 					$constraint = $constraints->addChild("constraint", "");
@@ -178,7 +176,7 @@ function getConstraints($con, $tables, $dbname) {
 			$query = "SHOW KEYS FROM ".$table->name." WHERE Key_name = 'PRIMARY'";
 			$res = mysqli_query($con, $query);
 					
-			$constraints = $new_tables->table[$i]->addChild("constraints", "");
+			$constraints = $newTables->table[$i]->addChild("constraints", "");
 			if(mysqli_num_rows($res)) {
 				while($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
 					$constraint = $constraints->addChild("constraint", "");
@@ -193,11 +191,11 @@ function getConstraints($con, $tables, $dbname) {
 			$i++;
 		}
 		
-		$new_tables = getContraintsAutomatically($con, $new_tables);
+		$newTables = getContraintsAutomatically($con, $newTables);
 	}
 	mysqli_free_result($res);
 	
-	return $new_tables;
+	return $newTables;
 }
 
 function getContraintsAutomatically($con, $tables) {
@@ -233,6 +231,24 @@ function getContraintsAutomatically($con, $tables) {
 				$i++;
 			}
 		}
+	}
+	
+	return $newTables;
+}
+
+function findBridgeTables($tables) {
+	$newTables = $tables;
+	
+	$i = 0;
+	foreach($tables->table as $table) {
+		$nrAttributes = count($tables->table[$i]->attributes->attribute);
+		$nrConstraints = count($tables->table[$i]->constraints->constraint);
+		
+		if($nrAttributes == $nrConstraints) {
+			$newTables->table[$i]->addAttribute("bridgeTable", true);
+		}
+		
+		$i++;
 	}
 	
 	return $newTables;

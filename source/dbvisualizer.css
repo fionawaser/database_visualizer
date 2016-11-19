@@ -205,7 +205,8 @@ div.histogramIcon {
 	background-image: url(img/histogram_icon.ico);
 	width: 32px;
 	height: 23px;
-	float: left;
+	display: block;
+	margin: auto;
 }
 
 div.histogramIcon:hover {

@@ -93,7 +93,7 @@ Author: Fiona Waser
 					<tr><td>Database Name:</td><td><input name="db_name" type="text" value="<?php echo $dbn_old; ?>" required/></td></tr>
 					<tr><td>Host:</td><td><input name="db_host" type="text" value="<?php echo $host_old; ?>" required/></td></tr>
 					<tr></tr>
-					<tr><td>Import file:</td><td><input type="file" name="importFile" id="importFile"></td></tr>
+					<tr><td>Import file (optional):</td><td><input type="file" name="importFile" id="importFile"></td></tr>
 				</table>
 				
 				<p><input name="submit_info" type="submit" value="Ready"></p>

@@ -222,9 +222,6 @@ function drawStructuralChordDiagram() {
 	var density_colors = d3.scale.linear()
 		.domain(values_nr_rows_domain)
 		.range(values_nr_rows_range);
-		
-	console.log(values_nr_rows_domain);
-	console.log(values_nr_rows_range);
 	
 	var cardinality_colors = d3.scale.linear()
 		.domain([0, 1, 1.01, 2])
@@ -1186,7 +1183,7 @@ function showRows() {
 
 								var tableHeader = "";
 								for(var i = 0; i < resultHeader.length; i++) {
-									tableHeader += "<th style='cursor: pointer;'><div id='tableHeaderCellContent' style='height: 24px;'><div id='tableHeaderCellText' style='float: left; height: 24px;'><span onclick='sortShowRows(&quot;"+resultHeader[i].orgtable+"&quot;, &quot;"+resultHeader[i].orgname+"&quot;);'>"+resultHeader[i].name+"</span></div>";
+									tableHeader += "<th style='cursor: pointer;'><span onclick='sortShowRows(&quot;"+resultHeader[i].orgtable+"&quot;, &quot;"+resultHeader[i].orgname+"&quot;);'>"+resultHeader[i].name+"</span>";
 									
 									var tIndex = 0;
 									var aIndex = 0;
@@ -1205,11 +1202,11 @@ function showRows() {
 									}
 									
 									if(chosenAttributesOrderBy[tIndex][aIndex] == "None") {
-										tableHeader += " <div id='sortIconRowsHeader' style='float: left; width: 14px; height: 24px;'>&nbsp;</div>";
+										tableHeader += " <div id='sortIconRowsHeader'>&nbsp;</div>";
 									} else if(chosenAttributesOrderBy[tIndex][aIndex] == "ASC") {
-										tableHeader += " <div id='sortIconRowsHeader' style='float: left; width: 14px; height: 24px;'>&#9650;</div>";
+										tableHeader += " <div id='sortIconRowsHeader'>&#9650;</div>";
 									} else if(chosenAttributesOrderBy[tIndex][aIndex] == "DESC") {
-										tableHeader += " <div id='sortIconRowsHeader' style='float: left; width: 14px; height: 24px;'>&#9660;</div>";
+										tableHeader += " <div id='sortIconRowsHeader'>&#9660;</div>";
 									}
 									
 									for(var j = 0; j < tables.length; j++) {
@@ -1235,7 +1232,7 @@ function showRows() {
 								for(var i = 0; i < resultRows.length; i++) {
 									rows += "<tr>";
 									for(var j = 0; j < resultRows[i].length; j++) {
-										rows += "<td>"+resultRows[i][j]+"</td>";
+										rows += "<td style='text-align: center;'>"+resultRows[i][j]+"</td>";
 									}
 									rows += "</tr>";
 								}
@@ -1449,7 +1446,7 @@ function drawHistogram(widthNewWindow, heightNewWindow, newWindow, tableName, at
 		.attr("transform", "translate(0," + (height - margin.bottom) + ")")
 		.call(xAxis)
 		.selectAll(".tick")
-			.attr("transform", function(d, i) { return "translate(" + (width/nrBars*i) + ",0)"; })
+			.attr("transform", function(d, i) { return "translate(" + (width/nrBars*i+2) + ",0)"; })
 		.selectAll("text")
 			.style("text-anchor", "end")
 			.attr("dx", "-.8em")
@@ -1472,8 +1469,8 @@ function drawHistogram(widthNewWindow, heightNewWindow, newWindow, tableName, at
 		.data(data)
 		.enter().append("rect")
 			.style("fill", "steelblue")
-			.attr("x", function(d, i) { return width/nrBars*i; }) //x(d[0])
-			.attr("width", 20) //x.rangeBand()
+			.attr("x", function(d, i) { return width/nrBars*i+2; })
+			.attr("width", 20)
 			.attr("y", function(d) { return y(parseFloat(d[1])); })
 			.attr("height", function(d) { return height - margin.bottom - y(d[1]); })
 			.on("click", function(d) {

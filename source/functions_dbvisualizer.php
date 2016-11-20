@@ -3,6 +3,17 @@
 Author: Fiona Waser
 */
 
+/*
+Checks if the given db-info is right by trying to establish a connection and selecting the db.
+
+Parameters:
+$db_user = database user name
+$db_pw = database user password
+$db_name = database name
+$db_host = database host name
+
+Returns true if a connections was established successfully and the database could be set.
+*/
 function checkDBInfos($db_user, $db_pw, $db_name, $db_host) {
 	$con = mysqli_connect($db_host, $db_user, $db_pw);
 	
@@ -21,7 +32,16 @@ function checkDBInfos($db_user, $db_pw, $db_name, $db_host) {
 	return true;
 }
 
+/*
+Imports the given structure file. In this process, the file is validated against the xsd schema file.
+
+Parameters:
+$file = file to import
+
+Returns true if the file was successfully imported and the structure of the xml file was according to the xsd schema file in "/schemas/tables.xsd".
+*/
 function fileImport($file) {
+	$currentPath = getcwd();
 	$target_file = "tables.xml";
 	$uploadOk = 1;
 	$fileType = $file["type"];
@@ -34,13 +54,31 @@ function fileImport($file) {
 		return false;
 	} else {
 		if (move_uploaded_file($file["tmp_name"], $target_file)) {
-			return true;
+			
+			$doc = new DOMDocument();
+			$doc->load($currentPath."/".$target_file);
+
+			$is_valid_xml = $doc->schemaValidate($currentPath."/schemas/tables.xsd");
+			if($is_valid_xml) {
+				return true;
+			} else {
+				return false;
+			}
 		} else {
 			return false;
 		}
 	}
 }
 
+/*
+Retrieves all the needed information for the visualization and writes the information into an xml file.
+The xml file is counstructed according to the xsd schema file in "/schemas/tables.xsd".
+
+Parameters:
+$con = mysqli connection object
+$db_name = database name
+
+*/
 function getMetadata($con, $db_name) {
 	if(file_exists("tables.xml")) {
 		unlink("tables.xml");
@@ -55,6 +93,15 @@ function getMetadata($con, $db_name) {
 	$tables->asXml("tables.xml");
 }
 
+/*
+Gets all the tables and writes them to a SimpleXMLElement Object.
+
+Parameters:
+$con = mysqli connection object
+$tables = the tables as SimpleXMLElement Object
+
+Returns a SimpleXMLElement Object.
+*/
 function getTables($con, $tables) {
 	$query = "SHOW FULL TABLES";
 	$res = mysqli_query($con, $query);
@@ -71,6 +118,15 @@ function getTables($con, $tables) {
 	return $tables;
 }
 
+/*
+Retrieves number of rows for the given tables.
+
+Parameters:
+$con = mysqli connection object
+$tables = the tables as SimpleXMLElement Object
+
+Returns a SimpleXMLElement Object.
+*/
 function getTableCounts($con, $tables) {
 	$newTables = $tables;
 	
@@ -88,6 +144,15 @@ function getTableCounts($con, $tables) {
 	return $newTables;
 }
 
+/*
+Retrieves all attributes for the given tables.
+
+Parameters:
+$con = mysqli connection object
+$tables = the tables as SimpleXMLElement Object
+
+Returns a SimpleXMLElement Object.
+*/
 function getAttributes($con, $tables) {
 	$newTables = $tables;
 	
@@ -140,6 +205,17 @@ function getAttributes($con, $tables) {
 	return $newTables;
 }
 
+/*
+Returns all the contraints of the tables as SimpleXMLElement Object.
+Tries to get all constraints, meaning Primary and Foreign. If only Primary key constraints are available, the function "getContraintsAutomatically" gets them automatically.
+
+Parameters:
+$con = mysqli connection object
+$tables = the tables as SimpleXMLElement Object
+$dbname = database name
+
+Returns a SimpleXMLElement Object.
+*/
 function getConstraints($con, $tables, $dbname) {
 	$newTables = $tables;
 	
@@ -198,20 +274,44 @@ function getConstraints($con, $tables, $dbname) {
 	return $newTables;
 }
 
+/*
+Reads Foreignkey connections and return the SimpleXMLElement Object.
+Two attributes are connected if they have the right name, meaning related to pk table, and suffixes pk/id or fk. Also they have to have the same mysql datatype.
+
+Parameters:
+$con = mysqli connection object
+$tables = the tables as SimpleXMLElement Object
+
+Returns a SimpleXMLElement Object.
+*/
 function getContraintsAutomatically($con, $tables) {
 	$newTables = $tables;
 	
 	foreach($tables->table as $table) {
 		foreach($table->constraints->constraint as $constraint) {
 			$pk_attribute = $constraint->column_name;
+			$pk_attribute_type = "";
+			foreach($table->attributes->attribute as $pk_attribute_info) {
+				if(strcmp($pk_attribute_info->field, $pk_attribute) == 0) {
+					$pk_attribute_type = $pk_attribute_info->type;
+				}
+			}
 			
 			$i = 0;
 			foreach($tables->table as $tableSearch) {
 				foreach($tableSearch->attributes->attribute as $attributeSearch) {
 					if($table->name != $tableSearch->name) {
 						$search_attribute = $attributeSearch->field;
+						$search_attribute_type = $attributeSearch->type;
 						
-						if((substr($pk_attribute, 0, -2) == substr($search_attribute, 0, -2)) && endsWithIgnoreCase($pk_attribute, "ID") && endsWithIgnoreCase($search_attribute, "FK")) {
+						if(
+						(
+						(($pk_attribute == $table->name || ((substr($pk_attribute, 0, -2) == $table->name) && (endsWithIgnoreCase($pk_attribute, "id") || endsWithIgnoreCase($pk_attribute, "pk")))) && $search_attribute == $table->name) ||
+						(($pk_attribute == $table->name || ((substr($pk_attribute, 0, -2) == $table->name) && (endsWithIgnoreCase($pk_attribute, "id") || endsWithIgnoreCase($pk_attribute, "pk")))) && (substr($search_attribute, 0, -2) == $table->name) && endsWithIgnoreCase($search_attribute, "fk"))
+						)
+						&& 
+						(strcmp($pk_attribute_type, $search_attribute_type) == 0)
+						) {
 							$constraint = $newTables->table[$i]->constraints->addChild("constraint", "");
 								
 							$constraint->addChild("column_name", $search_attribute);
@@ -236,6 +336,14 @@ function getContraintsAutomatically($con, $tables) {
 	return $newTables;
 }
 
+/*
+Adds an attribute to every bridge table to dentify the bridge table.
+
+Parameters:
+$tables = the tables as SimpleXMLElement Object
+
+Returns a SimpleXMLElement Object.
+*/
 function findBridgeTables($tables) {
 	$newTables = $tables;
 	
@@ -254,6 +362,15 @@ function findBridgeTables($tables) {
 	return $newTables;
 }
 
+/*
+Retrieves row related infos from the metadate and directly writes them to the structure file "tables.xml".
+Row related infos are the number of rows and the number of different values for attributes and constraints.
+
+Parameters:
+$con = mysqli connection object
+$tables = the tables as SimpleXMLElement Object
+$dbname = database name
+*/
 function refreshRowRelatedInfo($con, $tables, $dbname) {
 	$newTables = $tables;
 	
@@ -286,102 +403,13 @@ function refreshRowRelatedInfo($con, $tables, $dbname) {
 	$newTables->asXml("tables.xml");
 }
 
-function addPieChart($con, $chartname, $table1Name, $table2Name, $displayAttributeTable2) {
-	if(file_exists("statistics.xml")) {
-		$statistics = simplexml_load_file("statistics.xml");
-		$pieCharts = $statistics->pieCharts;
-		
-		unlink("statistics.xml");
-	} else {
-		$statistics = new SimpleXMLElement("<statistics></statistics>");
-		$pieCharts = $statistics->addChild("pieCharts", "");
-	}
-	
-	$pieChart = $pieCharts->addChild("pieChart", "");
-	$pieChart->addChild("chartname", $chartname);
-	$pieChart->addChild("table1Name", $table1Name);
-	$pieChart->addChild("table2Name", $table2Name);
-	$pieChart->addChild("displayAttributeTable2", $displayAttributeTable2);
-	
-	$tables = simplexml_load_file("tables.xml");
-	
-	foreach($tables->table as $table) {
-		if($table->name == $table1Name) {
-			$table1 = $table;
-		}
-		
-		if($table->name == $table2Name) {
-			$table2 = $table;
-		}
-	}
-	
-	$sourceFile = calculatePieChartData($con, $table1, $table2, $displayAttributeTable2);
-	$pieChart->addChild("sourceFile", $sourceFile);
-	
-	$statistics->asXml("statistics.xml");
-}
+/*
+Returns an array attributes from the chosen table for autocomplete purposes.
 
-function calculatePieChartData($con, $table1, $table2, $displayAttributeTable2) {
-	$pkTable2 = "";
-	foreach($table2->attributes->attribute as $attribute) {
-		if($attribute->key == "PRI") {
-			$pkTable2 = $attribute->field;
-		}
-	}
-	
-	$fkTable1 = "";
-	foreach($table1->constraints->constraint as $constraint) {
-		if(strcmp($constraint->referenced_table_name, $table2->name) == 0 && strcmp($constraint->referenced_column_name, $pkTable2) == 0) {
-			$fkTable1 = $constraint->column_name;
-		}
-	}
-	
-	$allReferenceValues = array();
-	$query = "SELECT ".$pkTable2.", ".$displayAttributeTable2." FROM ".$table2->name;
-	$res = mysqli_query($con, $query);
-	if(mysqli_num_rows($res)) {
-		while($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
-			array_push($allReferenceValues, $row);
-		}
-	}
-	mysqli_free_result($res);
-	
-	$data = array();
-	foreach($allReferenceValues as $listItem) {
-		$query = "SELECT COUNT(*) FROM ".$table1->name." JOIN ".$table2->name." ON ".$table2->name.".".$pkTable2." = ".$table1->name.".".$fkTable1." WHERE ".$table2->name.".".$displayAttributeTable2." = '".$listItem[$displayAttributeTable2]."'";
-		$res = mysqli_query($con, $query);
-		$nr = mysqli_fetch_row($res)[0];
-		
-		$element = array();
-		$element["refTable2"] = $listItem[$displayAttributeTable2];
-		$element["nr"] = $nr;
-		
-		array_push($data, $element);
-	}
-	mysqli_free_result($res);
-	
-	$counter = 0;
-	foreach(glob('statistics/*.*') as $file) {
-		$filename = explode("_",$file);
-		if($filename[0] == "statistics/pieChart") {
-			$counter++;
-		}
-	}
-	$fileNr = $counter++;
-	
-	$header = "col,count";
-	$filepath = "statistics/pieChart_".$fileNr.".csv";
-	$file = fopen($filepath, "w");
-	fputcsv($file,explode(',',$header));
-	foreach($data as $dataRow) {
-		$content = $dataRow["refTable2"].",".$dataRow["nr"];
-		fputcsv($file,explode(',',$content));
-	}
-	fclose($file);
-	
-	return $filepath;
-}
-
+Parameters:
+$input = input from user
+$table = the tables the user searches in
+*/
 function getAttributesAutocomplete($input, $table) {
 	$settings = parse_ini_file("config.ini", true);
 		
@@ -408,6 +436,12 @@ function getAttributesAutocomplete($input, $table) {
 	return $rows;
 }
 
+/*
+Performs the given query with databse info retrieved from the config file "config.ini" and returns an array of result rows.
+
+Parameters:
+$query = query to perform
+*/
 function processQueryRequest($query) {
 	$settings = parse_ini_file("config.ini", true);
 		
@@ -432,6 +466,12 @@ function processQueryRequest($query) {
 	return $rows;
 }
 
+/*
+Performs the given query with databse info retrieved from the config file "config.ini" and returns an array of header information for this particular query.
+
+Parameters:
+$query = query to perform
+*/
 function processQueryHeaderRequest($query) {
 	$settings = parse_ini_file("config.ini", true);
 		
@@ -460,7 +500,14 @@ function processQueryHeaderRequest($query) {
 	return $rows;
 }
 
+/*
+Checks if the given string represents a mysql number type.
 
+Parameters:
+$type = the type string to check
+
+Return true if it is a number, else false.
+*/
 function isSqlTypNumber($type) {
 	$list = array();
 	array_push($list, "int");
@@ -481,6 +528,16 @@ function isSqlTypNumber($type) {
 	return false;
 }
 
+/*
+Checks if the given string starts wiht the other string.
+The cases of the strings are being ignored.
+
+Parameters:
+$haystack = the string to search in
+$needle = the string to search for
+
+Returns true if the string starts with the other string, else false;
+*/
 function startsWithIgnoreCase($haystack, $needle) {
     $length = strlen($needle);
 	
@@ -490,6 +547,16 @@ function startsWithIgnoreCase($haystack, $needle) {
     return (substr($haystack, 0, $length) === $needle);
 }
 
+/*
+Checks if the given string ends wiht the other string.
+The cases of the strings are being ignored.
+
+Parameters:
+$haystack = the string to search in
+$needle = the string to search for
+
+Returns true if the string ends with the other string, else false;
+*/
 function endsWithIgnoreCase($haystack, $needle) {
     $length = strlen($needle);
     if ($length == 0) {

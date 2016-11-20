@@ -8,8 +8,8 @@ Author: Fiona Waser
 	<link rel="stylesheet" type="text/css" href="dbvisualizer.css">
 	<script type="text/javascript" src="lib/d3.js"></script>
 	<script type="text/javascript" src="lib/jquery-3.1.1.min.js"></script>
-	<script type="text/javascript" src="lib/graph.js"></script>
-	<script type="text/javascript" src="dbvisualizer.js"></script>
+	<script type="text/javascript" src="graph.js"></script>
+	<script type="text/javascript" src="visualization.js"></script>
 	<title>Database Visualizer</title>
 </head>
 <?php

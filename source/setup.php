@@ -28,7 +28,7 @@ Author: Fiona Waser
 				if(!fileImport($importFile)) {
 					$fileImportSuccess = false;
 					
-					echo "<p>Something went wrong with the File Import.</p>";
+					echo "<p>Something went wrong with the file import or your file is not valid.</p>";
 				
 					echo "<p>Back to <a href='setup.php'>Setup Assistant</a></p>";
 					
@@ -100,6 +100,8 @@ Author: Fiona Waser
 			</form>
 			
 			<p><b>Important: </b> The database user needs SELECT privileges on Information_Schema and the chosen database.</p>
+			
+			<p>Back to <a href='index.php'>Welcome Page</a></p>
 			<?php
 			}
 			?>

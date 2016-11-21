@@ -4,7 +4,10 @@ Author: Fiona Waser
 
 var lowCardinalityThreshold = 50;
 
-var tables;
+var originalTables = [];
+var tables = [];
+var bridgeTables = [];
+var bridgeInvolvedTables = [];
 var graph;
 var matrix = [];
 var references = [];
@@ -19,6 +22,7 @@ var chosenAttributes = [];
 var chosenAttributeAggrFunctions = [];
 var chosenAttributesOrderBy = [];
 var histogramChosenValues = [];
+var hideBridgeTables = false;
 
 function prepareStructuralView() {
 	$("#helpParent").mouseover(function() {
@@ -69,13 +73,70 @@ function drawStructuralChordDiagramInit() {
 		}
 		tables = newTables;
 		
+		var hasBridgeTables = false;
+		for(var i = 0; i < tables.length; i++) {
+			if(tables[i].getAttribute("bridgeTable") == 1) {
+				hasBridgeTables = true;
+			}
+		}
+		
+		if(hasBridgeTables) {
+			document.getElementById("showBridgeTables").style.display = "block";
+		}
+		
+		var showBridgeTablesCheck = document.getElementById("showBridgeTablesCheck").checked;
+		
+		if(hasBridgeTables && !showBridgeTablesCheck) {
+			hideBridgeTables = true;
+			
+			originalTables = tables;
+			
+			var noBridgeTables = [];
+			for(var i = 0; i < tables.length; i++) {
+				var tablename = originalTables[i].children[0].textContent;
+				if(tables[i].getAttribute("bridgeTable") == 1) {
+					bridgeTables.push(tables[i]);
+					
+					var connectingTables = [];
+					
+					var constraints = tables[i].children[3].children;
+					for(var j = 0; j < constraints.length; j++) {
+						var referenced_table_name = constraints[j].children[3].textContent;
+						
+						if(referenced_table_name != "") {
+							connectingTables.push(referenced_table_name);
+						}
+					}
+					
+					var bridge = [tablename, connectingTables];
+					
+					bridgeInvolvedTables.push(bridge);
+				} else {
+					noBridgeTables.push(tables[i]);
+				}
+			}
+			
+			tables = noBridgeTables;
+		}
+		
+		if(hideBridgeTables) {
+			for(var i = 0; i < originalTables.length; i++) {
+				var tablename = originalTables[i].children[0].textContent;
+				
+				map[tablename] = {};
+			}
+		}
+		
 		for(var i = 0; i < tables.length; i++) {
 			matrix[i] = [];
 				
 			references[i] = [];
 				
 			var tablename = tables[i].children[0].textContent;
-			map[tablename] = {};
+			
+			if(!hideBridgeTables) {
+				map[tablename] = {};
+			}
 				
 			attributeCardinalities[i] = [];
 			attributeCardinalitiesPercentages[i] = [];
@@ -127,7 +188,7 @@ function drawStructuralChordDiagramInit() {
 				var constraint_name = constraints[j].children[1].textContent;
 				var referenced_column_name = constraints[j].children[2].textContent;
 				var referenced_table_name = constraints[j].children[3].textContent;
-					
+				
 				if(referenced_table_name != "") {
 					var nr_diff_column_values = constraints[j].children[4].textContent;
 					constraintCardinalities[n][j] += nr_diff_column_values+" ";
@@ -137,8 +198,9 @@ function drawStructuralChordDiagramInit() {
 						if(referenced_table_name == tablenameSearch) {
 							map[tablename][referenced_table_name] = 1;
 							map[referenced_table_name][tablename] = 1;
-								
+							
 							matrix[n][k] = matrix[n][k] + 1;
+							
 							old_references = references[n][k];
 									
 							var attributesSearch = tables[k].children[2].children;
@@ -160,9 +222,77 @@ function drawStructuralChordDiagramInit() {
 							}
 						}
 					}
+				} else {
+					pk_column = column_name;
+				}
+			}
+			
+			if(hideBridgeTables) {
+				for(var i = 0; i < bridgeInvolvedTables.length; i++) {
+					var bridgeTablename = bridgeInvolvedTables[i][0];
+					var bridgeTablesConnect = bridgeInvolvedTables[i][1];
+					
+					if(jQuery.inArray(tablename, bridgeTablesConnect) != -1) {
+						for(var j = 0; j < bridgeTablesConnect.length; j++) {
+							if(tablename != bridgeTablesConnect[j]) {
+								for(var l = 0; l < tables.length; l++) {
+									
+									if(tables[l].children[0].textContent == bridgeTablesConnect[j]) {
+										matrix[n][l] = matrix[n][l] + 1;
+										
+										for(var o = 0; o < bridgeTables.length; o++) {
+											if(bridgeTables[o].children[0].textContent == bridgeTablename) {
+												var nr_rowsBridge = bridgeTables[o].children[1].textContent;
+												
+												var constraintsBridge = bridgeTables[o].children[3].children;
+												
+												var bridge_referenced_column_name = "";
+												var bridge_referenced_table_name = "";
+												for(var p = 0; p < constraintsBridge.length; p++) {
+													
+													var column_name = constraintsBridge[p].children[0].textContent;
+													var bridge_referenced_column_name = constraintsBridge[p].children[2].textContent;
+													var bridge_referenced_table_name = constraintsBridge[p].children[3].textContent;
+												}
+												
+												var column_name = "";
+												for(var p = 0; p < constraintsBridge.length; p++) {
+													if(constraintsBridge[p].children[3].textContent == tablename) {
+														column_name = constraintsBridge[p].children[0].textContent;
+													}
+												}
+												
+												constraintCardinalities[n][l] += nr_rowsBridge+" ";
+												constraintCardinalitiesPercentages[n][l] += 1+" ";
+												var percentage = constraintCardinalitiesPercentages[n][l] * 100;
+															
+												var cardinality = constraintCardinalities[n][l];
+												var cardinalityPercent = 100;
+														
+												references[n][l] = "PK: "+bridge_referenced_table_name+"."+bridge_referenced_column_name+" <-> PK: "+tablename+"."+pk_column+", Bridge Table: "+bridgeTablename+" ("+formatNumber(cardinality)+" ~ "+formatNumber(cardinalityPercent)+"%)";
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
+		
+		if(hideBridgeTables) {
+			for(var i = 0; i < bridgeInvolvedTables.length; i++) {
+				var bridgeTablename = bridgeInvolvedTables[i][0];
+				var bridgeTablesConnect = bridgeInvolvedTables[i][1];
+				
+				for(var j = 0; j < bridgeTablesConnect.length; j++) {
+					map[bridgeTablesConnect[j]][bridgeTablename] = 0.5;
+					map[bridgeTablename][bridgeTablesConnect[j]] = 0.5;
+				}
+			}
+		}
+		
 		graph = new Graph(map);
 		
 		drawStructuralChordDiagram();
@@ -654,8 +784,9 @@ function setHistogramChosenValue(tableIndex, attributeIndex, value) {
 
 function showAttributeInfo(index) {
 	clearElement("#attributeInfo");
-				
+	
 	var table = tables[index];
+	
 	var tablename = table.firstChild.textContent;
 	
 	var attributes = table.children[2].children;
@@ -727,10 +858,7 @@ function showAttributeInfo(index) {
 		}
 		choserContentOrder += "</select>";
 		
-		var histogramChooser = "";
-		if(key != "PRI") {
-			histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+", &quot;&quot;);' class='histogramIcon'>&nbsp;</div>";
-		}
+		var histogramChooser = "<div onclick='prepareHistogram("+index+", &quot;"+tablename+"&quot;, &quot;"+field+"&quot;, "+j+", &quot;&quot;);' class='histogramIcon'>&nbsp;</div>";
 		
 		content += "<tr>"+choserContent+"<td>"+field+"</td><td>"+type+"</td><td>"+null_+"</td><td>"+key+"</td><td>"+default_+"</td><td>"+extra+"</td><td>"+unit+"</td><td>"+svg+"</br> "+cardinalityInfo+"</td><td>"+histogramChooser+"</td><td>"+aggFunctionsHtml+"</td><td>"+choserContentOrder+"</td></tr>";
 	}
@@ -931,6 +1059,7 @@ function showRows() {
 					
 					// https://github.com/andrewhayward/dijkstra
 					var currentPath = graph.findShortestPath(sourceTablename, targetTablename);
+					
 					var currentAliases = [];
 					for(var n = 0; n < currentPath.length; n++) {
 						var firstChar = currentPath[n].substring(0,1);
@@ -974,8 +1103,8 @@ function showRows() {
 				tablesQuery += pathTableAlias;
 				tablesQueryVisual += pathTableAlias;
 				
-				for(var j = 0; j < tables.length; j++) {
-					var table = tables[j];
+				for(var j = 0; j < originalTables.length; j++) {
+					var table = originalTables[j];
 					var tableName = table.firstChild.textContent;
 					
 					if(pathTable == tableName) {
@@ -1051,9 +1180,9 @@ function showRows() {
 						}
 						
 						if(!keyFound) {
-							for(var l = 0; l < tables.length; l++) {
+							for(var l = 0; l < originalTables.length; l++) {
 								
-								if(tables[l].firstChild.textContent == path[i+1]) {
+								if(originalTables[l].firstChild.textContent == path[i+1]) {
 									
 									if(flagAll) {
 										attributesQuery = "*";
@@ -1102,7 +1231,7 @@ function showRows() {
 										}
 									}
 									
-									var constraints = tables[l].children[3].children;
+									var constraints = originalTables[l].children[3].children;
 									
 									for(var m = 0; m < constraints.length; m++) {
 										
@@ -1187,10 +1316,10 @@ function showRows() {
 									
 									var tIndex = 0;
 									var aIndex = 0;
-									for(var l = 0; l < tables.length; l++) {
-										var tname = tables[l].firstChild.textContent;
+									for(var l = 0; l < originalTables.length; l++) {
+										var tname = originalTables[l].firstChild.textContent;
 										if(tname == resultHeader[i].orgtable) {
-											var attributes = tables[l].children[2].children;
+											var attributes = originalTables[l].children[2].children;
 											for(var j = 0; j < attributes.length; j++) {
 												var aname = attributes[j].firstChild.textContent;
 												if(aname == resultHeader[i].orgname) {
@@ -1209,17 +1338,14 @@ function showRows() {
 										tableHeader += " <div id='sortIconRowsHeader'>&#9660;</div>";
 									}
 									
-									for(var j = 0; j < tables.length; j++) {
-										var tablename = tables[j].firstChild.textContent;
+									for(var j = 0; j < originalTables.length; j++) {
+										var tablename = originalTables[j].firstChild.textContent;
 										if(tablename == resultHeader[i].orgtable) {
-											var attributes = tables[j].children[2].children;
+											var attributes = originalTables[j].children[2].children;
 											for(var l = 0; l < attributes.length; l++) {
 												var attributeName = attributes[l].firstChild.textContent;
 												if(attributeName == resultHeader[i].orgname) {
-													var key = attributes[l].children[3].textContent;
-													if(key != "PRI") {
-														tableHeader += " <div onclick='prepareHistogram("+j+", &quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;, "+l+", &quot;"+query+"&quot;);' class='histogramIcon'>&nbsp;</div>";
-													}
+													tableHeader += " <div onclick='prepareHistogram("+j+", &quot;"+tablename+"&quot;, &quot;"+attributeName+"&quot;, "+l+", &quot;"+query+"&quot;);' class='histogramIcon'>&nbsp;</div>";
 												}
 											}
 										}
@@ -1255,10 +1381,10 @@ function sortShowRows(tablename, attributename) {
 	var tIndex = 0;
 	var aIndex = 0;
 	
-	for(var i = 0; i < tables.length; i++) {
-		var tname = tables[i].firstChild.textContent;
+	for(var i = 0; i < originalTables.length; i++) {
+		var tname = originalTables[i].firstChild.textContent;
 		if(tname == tablename) {
-			var attributes = tables[i].children[2].children;
+			var attributes = originalTables[i].children[2].children;
 			for(var j = 0; j < attributes.length; j++) {
 				var aname = attributes[j].firstChild.textContent;
 				if(aname == attributename) {
@@ -1525,6 +1651,38 @@ function isSqlTypNumber(type) {
 	}
 	
 	return false;
+}
+
+function permutator(inputArr) {
+	var results = [];
+
+	function permute(arr, memo) {
+		var cur, memo = memo || [];
+
+		for (var i = 0; i < arr.length; i++) {
+			cur = arr.splice(i, 1);
+			if (arr.length === 0) {
+				results.push(memo.concat(cur));
+			}
+			permute(arr.slice(), memo.concat(cur));
+			arr.splice(i, 0, cur[0]);
+		}
+
+		return results;
+	}
+
+	return permute(inputArr);
+}
+
+function arraysEqual(arr1, arr2) {
+    if(arr1.length !== arr2.length)
+        return false;
+    for(var i = arr1.length; i--;) {
+        if(arr1[i] !== arr2[i])
+            return false;
+    }
+
+    return true;
 }
 
 jQuery.fn.d3Click = function () {

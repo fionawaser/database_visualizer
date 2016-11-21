@@ -64,6 +64,11 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 				<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onclick="window.location.reload();"> Nr. Fields<br>
 			</form>
 		</div>
+		<div id="showBridgeTables">
+			<form action="" method="post">
+				<span style="font-size: 12px; font-weight: bold; color: #000066;">Show Bridge Tables </span><input type="checkbox" id="showBridgeTablesCheck" name="showBridgeTablesCheck" value="Show Bridge Tables" onclick="window.location.reload();"/>
+			</form>
+		</div>
 	</div>
 	<div id="content">
 		<div id="leftSidebar">

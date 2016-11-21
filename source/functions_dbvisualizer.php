@@ -219,13 +219,13 @@ Returns a SimpleXMLElement Object.
 function getConstraints($con, $tables, $dbname) {
 	$newTables = $tables;
 	
-	$query = "SELECT * FROM information_schema.table_constraints WHERE constraint_schema = '".$dbname."' and constraint_type != 'PRIMARY KEY'";
+	$query = "SELECT * FROM information_schema.table_constraints WHERE constraint_schema = '".$dbname."' and constraint_type != 'PRIMARY KEY' and constraint_type != 'UNIQUE KEY'";
 	$res = mysqli_query($con, $query);
 				
 	if(mysqli_num_rows($res)) {
 		$i = 0;
 		foreach($tables->table as $table) {
-			$query = "SELECT COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_COLUMN_NAME, REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = '".$table->name."' AND TABLE_SCHEMA = '".$dbname."'";
+			$query = "SELECT COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_COLUMN_NAME, REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = '".$table->name."' AND TABLE_SCHEMA = '".$dbname."' AND CONSTRAINT_NAME != 'UNIQUE'";
 			$res = mysqli_query($con, $query);
 						
 			$constraints = $newTables->table[$i]->addChild("constraints", "");
@@ -352,7 +352,7 @@ function findBridgeTables($tables) {
 		$nrAttributes = count($tables->table[$i]->attributes->attribute);
 		$nrConstraints = count($tables->table[$i]->constraints->constraint);
 		
-		if($nrAttributes == $nrConstraints) {
+		if($nrAttributes <= $nrConstraints) {
 			$newTables->table[$i]->addAttribute("bridgeTable", true);
 		}
 		

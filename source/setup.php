@@ -6,7 +6,9 @@ Author: Fiona Waser
 	<head>
 		<meta charset="utf-8">
 		<link rel="stylesheet" type="text/css" href="dbvisualizer.css">
-		<title>Database Visualizer</title>
+		<title>Setup</title>
+		<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+		<link rel="icon" href="img/favicon.ico" type="image/x-icon">
 	</head>
 	<body>
 		<h1>Database Visualizer</h1>
@@ -27,6 +29,8 @@ Author: Fiona Waser
 				
 				if(!fileImport($importFile)) {
 					$fileImportSuccess = false;
+					
+					echo "<h2>Error with your Import File</h2>";
 					
 					echo "<p>Something went wrong with the file import or your file is not valid.</p>";
 				
@@ -57,16 +61,20 @@ Author: Fiona Waser
 				mysqli_close($con);
 				
 				if($fileImportSuccess) {
-					echo "<p>Setup was successful.</p>";
+					echo "<h2>Setup successfull</h2>";
 					
-					echo "<p>Download the structure file <a href='download_structure_file.php'>here</a>. You can import this file to speed up the setup process next time (new content or new database schema won't be regarded but you can update row related information on the visualization page.)</p>";
+					echo "<p>Download the structure file <a href='download_structure_file.php'>here</a>.<br/>
+					You can import this file to speed up the setup process next time providing the structure of the database is the same from the time the structure file was downloaded.<br/>
+					You can always update row related information at the Visualization page.</p>";
 					
 					echo "<p>Back to <a href='setup.php'>Setup Assistant</a></p>";
 					
 					echo "<p>Back to <a href='index.php'>Welcome Page</a></p>";
 				}
 			} else {
-				echo "<p>Something is wrong with your Database-Info. Please check them and try again.</p>";
+				echo "<h2>Error with your Database Information</h2>";
+				
+				echo "<p>Something is wrong with your Database Information. Please check them and try again.</p>";
 				
 				echo "<p>Back to <a href='setup.php'>Setup Assistant</a></p>";
 				
@@ -83,7 +91,7 @@ Author: Fiona Waser
 			}
 		?>
 		<div id="setup">
-			<p>Please fill out this form:</p>
+			<p>Following information is needed to set up the features:</p>
 			
 			<form name="setup" action="setup.php" method="post" enctype="multipart/form-data">
 				<p>Database info:<p>

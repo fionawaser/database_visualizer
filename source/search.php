@@ -8,7 +8,9 @@ Author: Fiona Waser
 	<link rel="stylesheet" type="text/css" href="dbvisualizer.css">
 	<script type="text/javascript" src="lib/jquery-3.1.1.min.js"></script>
 	<script type="text/javascript" src="search.js"></script>
-	<title>Database Visualizer</title>
+	<title>Search</title>
+	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="img/favicon.ico" type="image/x-icon">
 </head>
 <?php
 $settings = parse_ini_file("config.ini", true);

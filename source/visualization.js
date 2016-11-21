@@ -73,6 +73,8 @@ function drawStructuralChordDiagramInit() {
 		}
 		tables = newTables;
 		
+		originalTables = tables;
+		
 		var hasBridgeTables = false;
 		for(var i = 0; i < tables.length; i++) {
 			if(tables[i].getAttribute("bridgeTable") == 1) {
@@ -88,9 +90,7 @@ function drawStructuralChordDiagramInit() {
 		
 		if(hasBridgeTables && !showBridgeTablesCheck) {
 			hideBridgeTables = true;
-			
-			originalTables = tables;
-			
+
 			var noBridgeTables = [];
 			for(var i = 0; i < tables.length; i++) {
 				var tablename = originalTables[i].children[0].textContent;

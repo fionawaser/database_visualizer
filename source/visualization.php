@@ -10,7 +10,9 @@ Author: Fiona Waser
 	<script type="text/javascript" src="lib/jquery-3.1.1.min.js"></script>
 	<script type="text/javascript" src="graph.js"></script>
 	<script type="text/javascript" src="visualization.js"></script>
-	<title>Database Visualizer</title>
+	<title>Visualization</title>
+	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="img/favicon.ico" type="image/x-icon">
 </head>
 <?php
 $settings = parse_ini_file("config.ini", true);

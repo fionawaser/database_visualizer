@@ -1,5 +1,7 @@
 /*
 Author: Fiona Waser
+
+All javascript-code for the Visualization page.
 */
 
 var lowCardinalityThreshold = 50;
@@ -83,7 +85,9 @@ function drawStructuralChordDiagramInit() {
 		}
 		
 		if(hasBridgeTables) {
-			document.getElementById("showBridgeTables").style.display = "block";
+			document.getElementById("showBridgeTables").style.opacity = 1;
+			
+			document.getElementById("showBridgeTablesCheck").disabled = false;
 		}
 		
 		var showBridgeTablesCheck = document.getElementById("showBridgeTablesCheck").checked;
@@ -963,7 +967,7 @@ function showRows() {
 		var histogramChosenValuesEmpty = true;
 		for(var i = 0; i < histogramChosenValues.length; i++) {
 			for(var j = 0; j < histogramChosenValues[i].length; j++) {
-				if(checkHistogramChosenValue(i, j)) {
+				if(histogramChosenValues[i][j] != undefined) {
 					histogramChosenValuesEmpty = false;
 					
 					break;
@@ -1035,19 +1039,17 @@ function showRows() {
 			} else {
 				var attributes = table.children[2].children;
 				for(var p = 0; p < attributes.length; p++) {
-					if(checkHistogramChosenValue(index, p)) {
+					if(histogramChosenValues[index][p] != undefined) {
 						var type = attributes[p].children[1].textContent;
 						if(isSqlTypNumber(type)) {
-							where += attributes[p].firstChild.textContent+" = "+histogramChosenValues[index][p]+" AND ";
-							whereVisual += attributes[p].firstChild.textContent+" = "+histogramChosenValues[index][p]+" AND ";
+							where += attributes[p].firstChild.textContent+" = "+histogramChosenValues[index][p];
+							whereVisual += attributes[p].firstChild.textContent+" = "+histogramChosenValues[index][p];
 						} else {
-							where += attributes[p].firstChild.textContent+" = '"+histogramChosenValues[index][p]+"' AND ";
-							whereVisual += attributes[p].firstChild.textContent+" = '"+histogramChosenValues[index][p]+"' AND ";
+							where += attributes[p].firstChild.textContent+" = '"+histogramChosenValues[index][p]+"'";
+							whereVisual += attributes[p].firstChild.textContent+" = '"+histogramChosenValues[index][p]+"'";
 						}
 					}
 				}
-				where = where.substring(0, where.length-5);
-				whereVisual = whereVisual.substring(0, whereVisual.length-5);
 			}
 		} else if(chosenTables.length > 1) {
 			for(var i = 0; i < chosenTables.length; i++) {
@@ -1143,14 +1145,14 @@ function showRows() {
 						} else {
 							var attributes = table.children[2].children;
 							for(var p = 0; p < attributes.length; p++) {
-								if(checkHistogramChosenValue(j, p)) {
+								if(histogramChosenValues[j][p] != undefined) {
 									var type = attributes[p].children[1].textContent;
 									if(isSqlTypNumber(type)) {
-										where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[j][p]+" AND ";
-										whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[j][p]+" AND ";
+										where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[j][p];
+										whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[j][p];
 									} else {
-										where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[j][p]+"' AND ";
-										whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[j][p]+"' AND ";
+										where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[j][p]+"'";
+										whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[j][p]+"'";
 									}
 								}
 							}
@@ -1218,14 +1220,14 @@ function showRows() {
 									} else {
 										var attributes = table.children[2].children;
 										for(var p = 0; p < attributes.length; p++) {
-											if(checkHistogramChosenValue(l, p)) {
+											if(histogramChosenValues[l][p] != undefined) {
 												var type = attributes[p].children[1].textContent;
 												if(isSqlTypNumber(type)) {
-													where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[l][p]+" AND ";
-													whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[l][p]+" AND ";
+													where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[l][p];
+													whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = "+histogramChosenValues[l][p];
 												} else {
-													where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[l][p]+"' AND ";
-													whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[l][p]+"' AND ";
+													where += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[l][p];+"'"
+													whereVisual += pathAliases[i]+"."+attributes[p].firstChild.textContent+" = '"+histogramChosenValues[l][p]+"'";
 												}
 											}
 										}
@@ -1272,11 +1274,6 @@ function showRows() {
 			if(!chosenAttributesOrderByEmpty) {
 				order = order.substring(0, order.length-2);
 				orderVisual = orderVisual.substring(0, orderVisual.length-2);
-			}
-			
-			if(!histogramChosenValuesEmpty) {
-				where = where.substring(0, where.length-5);
-				whereVisual = whereVisual.substring(0, whereVisual.length-5);
 			}
 		}
 		
@@ -1602,20 +1599,23 @@ function drawHistogram(widthNewWindow, heightNewWindow, newWindow, tableName, at
 			.on("click", function(d) {
 				svg.selectAll("rect").style("fill", "steelblue");
 				
-				for(var i = 0; i < tables.length; i++) {
-					histogramChosenValues[i] = [];
-						
-					var attributes = tables[i].children[2].children;
-					for(var k = 0; k < attributes.length; k++) {
-						histogramChosenValues[i][k] = undefined;
-					}
-				}
-				
-				if(checkHistogramChosenValue(tableId, attributeId)) {
-					setHistogramChosenValue(tableId, attributeId, undefined);
+				if(histogramChosenValues[tableId][attributeId] == d[0]) {
+					histogramChosenValues[tableId][attributeId] = undefined;
+					
+					d3.select(this).style("fill", "steelblue");
 				} else {
+					histogramChosenValues[tableId][attributeId] = d[0];
+					
 					d3.select(this).style("fill", "deepskyblue");
-					setHistogramChosenValue(tableId, attributeId, d[0]);
+					
+					for(var i = 0; i < tables.length; i++) {
+						var attributes = tables[i].children[2].children;
+						for(var j = 0; j < attributes.length; j++) {
+							if(i != tableId && j != attributeId) {
+								histogramChosenValues[i][j] = undefined
+							}
+						}
+					}
 				}
 				
 				showRows();
@@ -1651,38 +1651,6 @@ function isSqlTypNumber(type) {
 	}
 	
 	return false;
-}
-
-function permutator(inputArr) {
-	var results = [];
-
-	function permute(arr, memo) {
-		var cur, memo = memo || [];
-
-		for (var i = 0; i < arr.length; i++) {
-			cur = arr.splice(i, 1);
-			if (arr.length === 0) {
-				results.push(memo.concat(cur));
-			}
-			permute(arr.slice(), memo.concat(cur));
-			arr.splice(i, 0, cur[0]);
-		}
-
-		return results;
-	}
-
-	return permute(inputArr);
-}
-
-function arraysEqual(arr1, arr2) {
-    if(arr1.length !== arr2.length)
-        return false;
-    for(var i = arr1.length; i--;) {
-        if(arr1[i] !== arr2[i])
-            return false;
-    }
-
-    return true;
 }
 
 jQuery.fn.d3Click = function () {

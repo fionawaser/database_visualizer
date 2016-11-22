@@ -88,6 +88,11 @@ Author: Fiona Waser
 				$password_old = $conf_old['database']['password'];
 				$dbn_old = $conf_old['database']['db_name'];
 				$host_old = $conf_old['database']['host'];
+			} else {
+				$username_old = "";
+				$password_old = "";
+				$dbn_old = "";
+				$host_old = "";
 			}
 		?>
 		<div id="setup">

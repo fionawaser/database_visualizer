@@ -1,6 +1,8 @@
 <?php
 /*
 Author: Fiona Waser
+
+All php-functions of the application.
 */
 
 /*

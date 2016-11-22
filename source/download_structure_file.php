@@ -1,4 +1,10 @@
 <?php
+/*
+Author: Fiona Waser
+
+Download page for the file "tables.xml";
+*/
+
 $filename = "tables.xml";
 $path = getcwd();
 $fileUrl = $path."/".$filename;

@@ -15,6 +15,11 @@ Author: Fiona Waser
 	<link rel="icon" href="img/favicon.ico" type="image/x-icon">
 </head>
 <?php
+if(!file_exists("config.ini")) {
+	header("Location: setup.php");
+	die();
+}
+
 $settings = parse_ini_file("config.ini", true);
 include "functions_dbvisualizer.php";
 		
@@ -56,7 +61,7 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 	</div>
 	<div id="topbarRight">
 		<div id="helpParent" class="help">
-			<div id="helpPopup" style="display: none"></div>
+			<div id="helpPopup" style="display: none"><img src="img/help_annotated.png" width="1300" height="1172" alt="Help Picture"/></div>
 		</div>
 		<div id="sortChordDiagram">
 			<span style="font-size: 12px; font-weight: bold; color: #000066;">Sort by:</span><br/>
@@ -68,7 +73,7 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		</div>
 		<div id="showBridgeTables">
 			<form action="" method="post">
-				<span style="font-size: 12px; font-weight: bold; color: #000066;">Show Bridge Tables </span><input type="checkbox" id="showBridgeTablesCheck" name="showBridgeTablesCheck" value="Show Bridge Tables" onclick="window.location.reload();"/>
+				<span style="font-size: 12px; font-weight: bold; color: #000066;">Show Bridge Tables </span><input type="checkbox" id="showBridgeTablesCheck" name="showBridgeTablesCheck" value="Show Bridge Tables" disabled="disabled" onclick="window.location.reload();"/>
 			</form>
 		</div>
 	</div>

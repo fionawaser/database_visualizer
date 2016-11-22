@@ -13,6 +13,11 @@ Author: Fiona Waser
 	<link rel="icon" href="img/favicon.ico" type="image/x-icon">
 </head>
 <?php
+if(!file_exists("config.ini")) {
+	header("Location: setup.php");
+	die();
+}
+
 $settings = parse_ini_file("config.ini", true);
 include "functions_dbvisualizer.php";
 		

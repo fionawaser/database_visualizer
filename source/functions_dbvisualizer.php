@@ -2,7 +2,7 @@
 /*
 Author: Fiona Waser
 
-All php-functions of the application.
+All PHP Functions of the application.
 */
 
 /*

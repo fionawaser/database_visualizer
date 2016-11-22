@@ -1,46 +1,45 @@
 /*
 Author: Fiona Waser
 
-All javascript-code for the Visualization page.
+All JavaScript code for the Visualization page (Visualization related only).
 */
 
-var lowCardinalityThreshold = 50;
+// use global variables because this script is only used for Visualization page
+// and because a lot of functions need real-time information about what the user has chosen
 
-var originalTables = [];
-var tables = [];
-var bridgeTables = [];
-var bridgeInvolvedTables = [];
-var graph;
-var matrix = [];
-var references = [];
-var map = {};
-var attributeCardinalities = [];
-var attributeCardinalitiesPercentages = [];
-var constraintCardinalities = [];
-var constraintCardinalitiesPercentages = [];
-var chosenTables = [];
-var chosenChord = null;
-var chosenAttributes = [];
-var chosenAttributeAggrFunctions = [];
-var chosenAttributesOrderBy = [];
-var histogramChosenValues = [];
-var hideBridgeTables = false;
+var lowCardinalityThreshold = 50; // threshhold to determine the cardinality of attributes
 
-function prepareStructuralView() {
-	$("#helpParent").mouseover(function() {
-		$(this).children("#helpPopup").show();
-	}).mouseout(function() {
-		$(this).children("#helpPopup").hide();
-	});
+var tables = []; // tables in visualization with information
+var originalTables = []; // the tables after sorting
+var bridgeTables = []; // bridge tables if there are any
+var bridgeInvolvedTables = []; // all tables connected by bridge tables
+var graph; // graph filled to return join-paths
+var matrix = []; // matrix for chord connections as references between tables
+var references = []; // references for table connections with information about reference
+var attributeCardinalities = []; // cardinalitites for all attributes
+var attributeCardinalitiesPercentages = []; // cardinalitites for all attributes as percentage
+var constraintCardinalities = []; // cardinalitites for all constraints
+var constraintCardinalitiesPercentages = []; // cardinalitites for all constraints as percentage
+var chosenTables = []; // the tables the user has chosen for the query
+var chosenChord = null; // the chord the user has chosen for the query
+var chosenAttributes = []; // the chosen attributes
+var chosenAttributeAggrFunctions = []; // the chosen aggregate functions
+var chosenAttributesOrderBy = []; // the chosen ordering for the attributes
+var histogramChosenValues = []; // the chosen values in the histogram
+var hideBridgeTables = false; // true if there are bridge tables and the user has chosen to hide them
+
+/*
+Prepares the visualization data and calls to draw the visualization.
+*/
+function prepareVisualizationData() {
 	
-	drawStructuralChordDiagramInit();
-}
-
-function drawStructuralChordDiagramInit() {
+	// read the structure file
 	d3.xml("tables.xml", "application/xml", function(xml) {
 		
+		// save table information
 		tables = xml.getElementsByTagName("table");
 		
+		// sort tables according to user choice
 		var sorting = $('input[name="sortModePath"]:checked').val();
 		
 		var tablesSortMapping = [];
@@ -75,6 +74,7 @@ function drawStructuralChordDiagramInit() {
 		}
 		tables = newTables;
 		
+		// save original tables in case bridge tables will be hidden
 		originalTables = tables;
 		
 		var hasBridgeTables = false;
@@ -123,6 +123,8 @@ function drawStructuralChordDiagramInit() {
 			tables = noBridgeTables;
 		}
 		
+		var map = {};
+		
 		if(hideBridgeTables) {
 			for(var i = 0; i < originalTables.length; i++) {
 				var tablename = originalTables[i].children[0].textContent;
@@ -138,7 +140,7 @@ function drawStructuralChordDiagramInit() {
 				
 			var tablename = tables[i].children[0].textContent;
 			
-			if(!hideBridgeTables) {
+			if(!hideBridgeTables) { // the automatic join path finder must have all tables, even bridge tables
 				map[tablename] = {};
 			}
 				
@@ -299,18 +301,14 @@ function drawStructuralChordDiagramInit() {
 		
 		graph = new Graph(map);
 		
-		drawStructuralChordDiagram();
-		
+		drawChordDiagram();
 	});
 }
 
-function confirmRefreshRowRelatedInfo() {
-	if(confirm('This may take several minutes. Are you sure you want to perform this action now?')) {
-		document.getElementById("refreshConfirmation").value = "yes";
-	}
-}
-
-function drawStructuralChordDiagram() {
+/*
+Draws the chord diagram and related legends according to the set arrays.
+*/
+function drawChordDiagram() {
 	clearElement("#diagram");
 	
 	var diagramWidth = $(window).width()/2-20;
@@ -320,8 +318,10 @@ function drawStructuralChordDiagram() {
 		outerRadius = Math.min(width, height) / 2 - 50,
 		innerRadius = outerRadius - 62;
 		
+	// detect keydown event
 	d3.select("body").on("keydown", function() {});
 	
+	// add sv to div
 	var svg = d3.select("#diagram").append("svg")
 		.attr("width", width)
 		.attr("height", height)
@@ -330,22 +330,27 @@ function drawStructuralChordDiagram() {
 		.style("font", "12px sans-serif")
 		.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 		
+	// color picker for nr. rows
 	var density_color_picker = d3.scale.linear()
 		.domain([0, tables.length-1])
 		.range(["white", "black"]);
 		
+	// create ranking for density colors to make color difference between tables bigger
+	var nr_rows_ordered_values = [];
 	var values_nr_rows_domain = [];
 	for(var n = 0; n < tables.length; n++) {
 		var current_value = parseFloat(tables[n].children[1].textContent);
 		
-		if(values_nr_rows_domain == null) {
-			values_nr_rows_domain.push(current_value);
+		if(values_nr_rows_domain.length == 0) {
+			values_nr_rows_domain.push(n);
+			nr_rows_ordered_values.push(current_value);
 		} else {
 			var index = 0;
-			while(current_value > values_nr_rows_domain[index]) {
+			while(current_value >= nr_rows_ordered_values[index] && index < values_nr_rows_domain.length) {
 				index++;
 			}
-			values_nr_rows_domain.splice(index, 0, current_value);
+			values_nr_rows_domain.splice(index, 0, n);
+			nr_rows_ordered_values.splice(index, 0, current_value);
 		}
 	}
 	var values_nr_rows_range = [];
@@ -353,10 +358,12 @@ function drawStructuralChordDiagram() {
 		values_nr_rows_range[n] = density_color_picker(n);
 	}
 	
+	// new color picker for nr. rows
 	var density_colors = d3.scale.linear()
 		.domain(values_nr_rows_domain)
 		.range(values_nr_rows_range);
 	
+	// colors for cardianlity number (percentage)
 	var cardinality_colors = d3.scale.linear()
 		.domain([0, 1, 1.01, 2])
 		.range(["white", "darkblue", "red", "darkred"]);
@@ -371,11 +378,13 @@ function drawStructuralChordDiagram() {
 	var path = d3.svg.chord()
 		.radius(innerRadius);
 
+	// draw circle
 	svg.append("circle")
 		.style("fill", "none")
 		.style("pointer-events", "all")
 		.attr("r", outerRadius-40);
 
+	// create layout of diagram using the matrix
 	layout.matrix(matrix);
 
 	var group = svg.selectAll(".group")
@@ -388,15 +397,17 @@ function drawStructuralChordDiagram() {
 			})
 		});
 
+	// add tablename and nr. rows as tooltip 
 	group.append("title").text(function(d, i) {
 		var number = parseFloat(tables[i].children[1].textContent);
 		return tables[i].children[0].textContent+" ("+formatNumber(number)+" rows)";
 	});
 
+	// draw parts of the circle according to layout
 	var groupPath = group.append("path")
 		.attr("id", function(d, i) { return "group" + i; })
 		.attr("d", arc)
-		.style("fill", function(d, i) { return density_colors(parseFloat(tables[i].children[1].textContent)); })
+		.style("fill", function(d, i) { return density_colors(i); })
 		.style("fill-opacity", ".5")
 		.style("stroke", "black")
 		.style("stroke-width", ".25px")
@@ -409,7 +420,7 @@ function drawStructuralChordDiagram() {
 					chosenTables = [];
 				}
 				
-				setTableChosen(d.index);
+				chosenTables.push(d.index);
 				
 				$(".group path").css("stroke-width", ".25px");
 				$(".group path").css("stroke", "black");
@@ -433,6 +444,7 @@ function drawStructuralChordDiagram() {
 			$(".group:eq("+d.index+") text").css("font-size", "12px");
 		});
 			
+	// add tablename as text outside of circle to save space for a lot of tables per circle
 	var groupText = group.append("text")
 		.each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
 		.attr("dy", ".35em")
@@ -452,7 +464,7 @@ function drawStructuralChordDiagram() {
 					chosenTables = [];
 				}
 				
-				setTableChosen(d.index);
+				chosenTables.push(d.index);
 				
 				$(".group path").css("stroke-width", ".25px");
 				$(".group path").css("stroke", "black");
@@ -476,25 +488,28 @@ function drawStructuralChordDiagram() {
 			d3.select(this).style("font-size", "12px");
 		});
 
+	// add chords (references of tables from matrix)
+	// important: all tables in matrix have at least one self-reference to make the part of the circle bigger,
+	// but as they are false information, they are filtered, but self references are still possible
 	var chord = svg.selectAll(".chord")
 		.data(layout.chords)
 		.enter().append("path")
 		.attr("class", "chord")
 		.style("fill", function(d) {
-			return cardinality_colors(getCardinalityCumulatedPercentage(d));
+			return cardinality_colors(getCardinalityCumulatedPercentage(d.source.index, d.target.index));
 		})
 		.style("opacity", function(d) {
-			if(d.source.index == d.target.index) {
-				return "0";
-			} else {
+			if(d.source.index != d.target.index || (d.source.index == d.target.index && matrix[d.source.index][d.target.index] > 1)) {
 				return "1";
+			} else {
+				return "0";
 			}
 		})
 		.attr("d", path)
 		.style("stroke", "#000")
 		.style("stroke-width", ".25px")
 		.on("click", function(d) {
-			if(d.source.index != d.target.index) {
+			if(d.source.index != d.target.index || (d.source.index == d.target.index && matrix[d.source.index][d.target.index] > 1)) {
 				chosenChord = d;
 				
 				showAttributeInfo(chosenChord.source.index);
@@ -513,7 +528,7 @@ function drawStructuralChordDiagram() {
 			}
 		})
 		.on("mouseover", function(d) {
-			if(d.source.index != d.target.index) {
+			if(d.source.index != d.target.index || (d.source.index == d.target.index && matrix[d.source.index][d.target.index] > 1)) {
 				d3.select(this).style("cursor", "pointer");
 				
 				$(".group:eq("+d.source.index+") text").css("font-weight", "bold");
@@ -522,7 +537,7 @@ function drawStructuralChordDiagram() {
 				$(".group:eq("+d.target.index+") text").css("font-size", "15px");
 			}
 		}).on("mouseout", function(d) {
-			if(d.source.index != d.target.index) {
+			if(d.source.index != d.target.index || (d.source.index == d.target.index && matrix[d.source.index][d.target.index] > 1)) {
 				d3.select(this).style("cursor", "default");
 				
 				$(".group:eq("+d.source.index+") text").css("font-weight", "normal");
@@ -532,12 +547,14 @@ function drawStructuralChordDiagram() {
 			}
 		});
 
+	// add info for chord (references) as tooltip
 	chord.append("title").text(function(d) {
-		if(d.source.index != d.target.index) {
+		if(d.source.index != d.target.index || (d.source.index == d.target.index && matrix[d.source.index][d.target.index] > 1)) {
 			return references[d.source.index][d.target.index];
 		}
 	});
 	
+	// this next part consists of drawing the legends only
 	var gradientWidth = 250;
 	var gradientHeight = 20;
 	var gradientYMin = 0;
@@ -653,12 +670,12 @@ function drawStructuralChordDiagram() {
 		
 	gradNrRows.append("stop")
 		.attr("offset", "0%")
-		.attr("stop-color", density_colors(0))
+		.attr("stop-color", values_nr_rows_range[0])
 		.attr("stop-opacity", 1);
 
 	gradNrRows.append("stop")
 		.attr("offset", "100%")
-		.attr("stop-color", density_colors(density_colors.range().length-1))
+		.attr("stop-color", values_nr_rows_range[values_nr_rows_range.length-1])
 		.attr("stop-opacity", 1);
 		
 	gradientNrRows.append("rect")
@@ -667,14 +684,14 @@ function drawStructuralChordDiagram() {
 		.style("fill", "url(#nrRowsGradient)");
 			
 	var legendNrRowsLegend0 = document.getElementById('legendNrRowsLegend0');
-	legendNrRowsLegend0.innerHTML = formatNumber(values_nr_rows_domain[0]);
+	legendNrRowsLegend0.innerHTML = formatNumber(nr_rows_ordered_values[0]);
 	legendNrRowsLegend0.style.marginLeft = gradientXCardinality+'px';
 	legendNrRowsLegend0.style.width = gradientWidth/2;
 	legendNrRowsLegend0.style.height = gradientHeight;
 	legendNrRowsLegend0.style.display = "inline-block";
 	
 	var legendNrRowsLegend1 = document.getElementById('legendNrRowsLegend1');
-	legendNrRowsLegend1.innerHTML = formatNumber(values_nr_rows_domain[values_nr_rows_domain.length-1]);
+	legendNrRowsLegend1.innerHTML = formatNumber(nr_rows_ordered_values[nr_rows_ordered_values.length-1]);
 	legendNrRowsLegend1.style.width = gradientWidth/2;
 	legendNrRowsLegend1.style.verticalAlign = "top";
 	legendNrRowsLegend1.style.height = gradientHeight;
@@ -683,35 +700,18 @@ function drawStructuralChordDiagram() {
 	legendNrRowsLegend1.style.textAlign = "right";
 }
 
-function getDensityRange(values) {
-	var min = 0;
-	var max = 0;
-	
-	for(var n = 0; n < values.length; n++) {
-		var currentValue = values[n];
-		
-		if(min == 0 || max == 0) {
-			min = currentValue;
-			max = currentValue;
-		} else {
-			if(currentValue < min) {
-				min = currentValue;
-			}
-			
-			if(currentValue > max) {
-				max = currentValue;
-			}
-		}
-	}
-	
-	return {
-		min: min,
-		max: max
-	};
-}
+/*
+Calculates and returns the cumulated percentage of the reference.
 
-function getCardinalityCumulatedPercentage(d) {
-	var values = constraintCardinalitiesPercentages[d.source.index][d.target.index].split(" ");
+A reference can have more than one constraint cardinality if the tables have multiple constraints between them.
+In this case, the average percentage is taken.
+
+Parameters:
+sourceIndex = index of source of chord/reference
+targetIndex = index of target of chord/reference
+*/
+function getCardinalityCumulatedPercentage(sourceIndex, targetIndex) {
+	var values = constraintCardinalitiesPercentages[sourceIndex][targetIndex].split(" ");
 	var valuesSum = 0;
 	for(var i = 0; i < (values.length-1); i++) {
 		valuesSum += parseFloat(values[i]);
@@ -721,39 +721,42 @@ function getCardinalityCumulatedPercentage(d) {
 	return cumulatedPercentage;
 }
 
-function checkTableChosen(tableIndex) {
-	if($.inArray(tableIndex, chosenTables) == -1) {
-		return false;
-	} else {
-		return true;
-	}
-}
+/*
+Toggle chosen attribute.
 
-function setTableChosen(tableIndex) {
-	if(checkTableChosen(tableIndex)) {
-		var index = chosenTables.indexOf(tableIndex);
-		chosenTables.splice(index, 1);
-	} else {
-		chosenTables.push(tableIndex);
-	}
-}
-
-function checkAttributeChosen(tableIndex, attributeIndex) {
-	return chosenAttributes[tableIndex][attributeIndex];
-}
-
+Parameters:
+tableIndex = index of table
+attributeIndex = index of attribute
+*/
 function setAttributeChosen(tableIndex, attributeIndex) {
-	if(checkAttributeChosen(tableIndex, attributeIndex)) {
+	if(chosenAttributes[tableIndex][attributeIndex]) {
 		chosenAttributes[tableIndex][attributeIndex] = false;
 	} else {
 		chosenAttributes[tableIndex][attributeIndex] = true;
 	}
 }
 
+/*
+Set chosen aggregate function for attribute.
+
+Parameters:
+tableIndex = index of table
+attributeIndex = index of attribute
+func = chosen aggregate function
+*/
 function setAggrFunctionChosen(tableIndex, attributeIndex, func) {
 	chosenAttributeAggrFunctions[tableIndex][attributeIndex] = func;
 }
 
+/*
+Check if aggregate function was chosen.
+
+Parameters:
+tableIndex = index of table
+attributeIndex = index of attribute
+
+Returns true if aggregate function was chosen, else false.
+*/
 function checkAggrFunctionChosen(tableIndex, attributeIndex) {
 	if(chosenAttributeAggrFunctions[tableIndex][attributeIndex] == "None") {
 		return false;
@@ -762,6 +765,15 @@ function checkAggrFunctionChosen(tableIndex, attributeIndex) {
 	}
 }
 
+/*
+Check if order by function was set for attribute.
+
+Parameters:
+tableIndex = index of table
+attributeIndex = index of attribute
+Returns true if order by function was chosen, else false.
+
+*/
 function checkChosenAttributesOrderBy(tableIndex, attributeIndex) {
 	if(chosenAttributesOrderBy[tableIndex][attributeIndex] == "None") {
 		return false;
@@ -770,22 +782,24 @@ function checkChosenAttributesOrderBy(tableIndex, attributeIndex) {
 	}
 }
 
+/*
+Sets the chosen order by function.
+
+Parameters:
+tableIndex = index of table
+attributeIndex = index of attribute
+order = chosen order fuction
+*/
 function setChosenAttributesOrderBy(tableIndex, attributeIndex, order) {
 	chosenAttributesOrderBy[tableIndex][attributeIndex] = order;
 }
 
-function checkHistogramChosenValue(tableIndex, attributeIndex) {
-	if(histogramChosenValues[tableIndex][attributeIndex] == undefined) {
-		return false;
-	} else {
-		return true;
-	}
-}
+/*
+Show Attribute infor for the chosen table.
 
-function setHistogramChosenValue(tableIndex, attributeIndex, value) {
-	histogramChosenValues[tableIndex][attributeIndex] = value;
-}
-
+Parameters:
+index = index of chosen table
+*/
 function showAttributeInfo(index) {
 	clearElement("#attributeInfo");
 	
@@ -843,7 +857,7 @@ function showAttributeInfo(index) {
 		var svg = "<svg width='"+fullRectWidth+"' height='"+rowHeight+"'><rect width='"+barWidth+"' height='"+rowHeight+"' style='fill: steelblue;' /></svg>";
 		
 		var choserContent = "<td>";
-		if(checkAttributeChosen(index, j)) {
+		if(chosenAttributes[index][j]) {
 			choserContent += "<input type='checkbox' name='attributeChooser_"+index+"_"+j+"' class='attributeChooserClass' value='"+field+"' onclick='toggleOneAttribute(this); setAttributeChosen("+index+", "+j+"); showRows();' checked='checked'>";
 		} else {
 			choserContent += "<input type='checkbox' name='attributeChooser_"+index+"_"+j+"' class='attributeChooserClass' value='"+field+"' onclick='toggleOneAttribute(this); setAttributeChosen("+index+", "+j+"); showRows();'>";
@@ -872,6 +886,12 @@ function showAttributeInfo(index) {
 	document.getElementById("attributeInfo").innerHTML = content;
 }
 
+/*
+Toggle checkbock for all attributes.
+
+Parameters:
+source = source element the call came from
+*/
 function toggleAllAttributes(source) {
 	var attributesBoxes = document.getElementsByClassName("attributeChooserClass");
 	
@@ -903,6 +923,12 @@ function toggleAllAttributes(source) {
 	showRows();
 }
 
+/*
+Toggle checkbock for one attribute.
+
+Parameters:
+source = source element the call came from
+*/
 function toggleOneAttribute(source) {
 	var allBox = document.getElementById("attributeChooserAll");
 	
@@ -925,6 +951,9 @@ function toggleOneAttribute(source) {
 	}
 }
 
+/*
+This functions checks for user choices, then builds the query, executes it and shows the results.
+*/
 function showRows() {
 	if(chosenChord != null) {
 		chosenTables = [chosenChord.target.index, chosenChord.source.index];
@@ -934,7 +963,7 @@ function showRows() {
 		var chosenAttributesAll = true;
 		for(var i = 0; i < chosenAttributes.length; i++) {
 			for(var j = 0; j < chosenAttributes[i].length; j++) {
-				if(!checkAttributeChosen(i, j)) {
+				if(!chosenAttributes[i][j]) {
 					chosenAttributesAll = false;
 					
 					break;
@@ -1004,9 +1033,9 @@ function showRows() {
 			} else {
 				var attributes = table.children[2].children;
 				for(var p = 0; p < attributes.length; p++) {
-					if(checkAttributeChosen(index, p) && checkAggrFunctionChosen(index, p)) {
+					if(chosenAttributes[index][p] && checkAggrFunctionChosen(index, p)) {
 						attributesQuery += chosenAttributeAggrFunctions[index][p]+"("+attributes[p].firstChild.textContent+"), ";
-					} else if(checkAttributeChosen(index, p)) {
+					} else if(chosenAttributes[index][p]) {
 						attributesQuery += attributes[p].firstChild.textContent+", ";
 					} else if(checkAggrFunctionChosen(index, p)) {
 						attributesQuery += chosenAttributeAggrFunctions[index][p]+"("+attributes[p].firstChild.textContent+"), ";
@@ -1059,7 +1088,6 @@ function showRows() {
 					var targetTable = tables[chosenTables[i+1]];
 					var targetTablename = targetTable.firstChild.textContent;
 					
-					// https://github.com/andrewhayward/dijkstra
 					var currentPath = graph.findShortestPath(sourceTablename, targetTablename);
 					
 					var currentAliases = [];
@@ -1116,9 +1144,9 @@ function showRows() {
 						} else {
 							var attributes = table.children[2].children;
 							for(var p = 0; p < attributes.length; p++) {
-								if(checkAttributeChosen(j, p) && checkAggrFunctionChosen(j, p)) {
+								if(chosenAttributes[j][p] && checkAggrFunctionChosen(j, p)) {
 									attributesQuery += chosenAttributeAggrFunctions[j][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
-								} else if(checkAttributeChosen(j, p)) {
+								} else if(chosenAttributes[j][p]) {
 									attributesQuery += pathAliases[i]+"."+attributes[p].firstChild.textContent+", ";
 								} else if(checkAggrFunctionChosen(j, p)) {
 									attributesQuery += chosenAttributeAggrFunctions[j][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
@@ -1191,9 +1219,9 @@ function showRows() {
 									} else {
 										var attributes = table.children[2].children;
 										for(var p = 0; p < attributes.length; p++) {
-											if(checkAttributeChosen(l, p) && checkAggrFunctionChosen(l, p)) {
+											if(chosenAttributes[l][p] && checkAggrFunctionChosen(l, p)) {
 												attributesQuery += chosenAttributeAggrFunctions[l][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
-											} else if(checkAttributeChosen(l, p)) {
+											} else if(chosenAttributes[l][p]) {
 												attributesQuery += pathAliases[i]+"."+attributes[p].firstChild.textContent+", ";
 											} else if(checkAggrFunctionChosen(l, p)) {
 												attributesQuery += chosenAttributeAggrFunctions[l][p]+"("+pathAliases[i]+"."+attributes[p].firstChild.textContent+"), ";
@@ -1374,6 +1402,13 @@ function showRows() {
 	}
 }
 
+/*
+Sets the sorting arrays and calls showRows again.
+
+Parameters:
+tablename = table to sort from
+attributename = attribute to sort with
+*/
 function sortShowRows(tablename, attributename) {
 	var tIndex = 0;
 	var aIndex = 0;
@@ -1403,19 +1438,41 @@ function sortShowRows(tablename, attributename) {
 	showRows();
 }
 
+/*
+Clears the given element from all content.
+
+Parameters:
+name = the name of the element, examples: "#divname"/".classname"
+*/
 function clearElement(name) {
 	var el = d3.select(name);
 	el.selectAll("*").remove();
 }
 
+/*
+Specifies all the possible aggregate functions.
+*/
 function getAggregateFunctions() {
 	return ["None", "AVG", "COUNT", "MAX", "MIN", "SUM"];
 }
 
+/*
+Specifies all the possible order by functions.
+*/
 function getOrderByFunctions() {
 	return ["None", "ASC", "DESC"];
 }
 
+/*
+Prepares the data and window for the histogram.
+
+Parameters:
+tableId = the id of the table to draw the histogram
+table = the table to draw the histogram
+attribute = the attribute to draw the histogram
+attributeId = the id of the attribute to draw the histogram
+oldQuery = the old query if the histogram data should be taken from a query already set
+*/
 function prepareHistogram(tableId, table, attribute, attributeId, oldQuery) {
 	var nrAttributes = parseFloat(attributeCardinalities[tableId][attributeId]);
 	
@@ -1514,6 +1571,19 @@ function prepareHistogram(tableId, table, attribute, attributeId, oldQuery) {
 	}
 }
 
+/*
+Draws the Histogram.
+
+Parameters:
+widthNewWindow = the width of the window to draw the histogram in
+heightNewWindow = the height of the window to draw the histogram in
+newWindow = the window to draw the histogram in
+tableName = the table name of the histogram data
+attributeName = the attribute name of the histogrm dama
+tableId = the table id of the histogram data
+attributeId = the attribute id of the histogram data
+data = the data to draw
+*/
 function drawHistogram(widthNewWindow, heightNewWindow, newWindow, tableName, attributeName, tableId, attributeId, data) {
 	var newWindowRoot = d3.select(newWindow.document.body)
 		.style("font-family", "Arial, Helvetica, sans-serif")
@@ -1629,10 +1699,29 @@ function drawHistogram(widthNewWindow, heightNewWindow, newWindow, tableName, at
 		});
 }
 
+/*
+Format a number (can be a string containing a number as the function parses every input to float) the german style.
+Example: number 120000.05 is parsed to 120.000,05
+
+Parameters:
+number = the number to format
+
+Returns the parsed number.
+*/
 function formatNumber(number) {
-	return number.toLocaleString('de-DE');
+	var numberParsed = parseFloat(number);
+	
+	return numberParsed.toLocaleString('de-DE');
 }
 
+/*
+Check if number string is a mySQL number type.
+
+Parameters:
+type = the string to determine if is a number type
+
+Returns true if it represents a number type, else false.
+*/
 function isSqlTypNumber(type) {
 	var list = [];
 	list.push("int");
@@ -1653,6 +1742,9 @@ function isSqlTypNumber(type) {
 	return false;
 }
 
+/*
+jQuery function to simulate mouse click.
+*/
 jQuery.fn.d3Click = function () {
   this.each(function (i, e) {
     var evt = new MouseEvent("click");

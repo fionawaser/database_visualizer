@@ -54,7 +54,7 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		</div>
 		<div id="structuralForm">
 			<form id="refreshInfosForm" name="refreshInfosForm" action="" method="post">
-				<input type="hidden" name="refreshConfirmation" id="refreshConfirmation" value="">
+				<input type="hidden" name="refreshConfirmation" id="refreshConfirmation" value="no">
 				<input type="submit" name="refreshRowInfo" value="Refresh Row-Related Information" onclick="confirmRefreshRowRelatedInfo();">
 			</form>
 		</div>
@@ -106,6 +106,23 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		}
 	}
 	
-	prepareStructuralView();
+	// mouseover event for help overlay
+	$("#helpParent").mouseover(function() {
+		$(this).children("#helpPopup").show();
+	}).mouseout(function() {
+		$(this).children("#helpPopup").hide();
+	});
+	
+	/*
+	Confirms that the user is sure he wants to perform the refresh (done in PHP) row related information right now.
+	*/
+	function confirmRefreshRowRelatedInfo() {
+		if(confirm('This may take several minutes. Are you sure you want to perform this action now?')) {
+			document.getElementById("refreshConfirmation").value = "yes";
+		}
+	}
+	
+	// visualize database
+	prepareVisualizationData();
 </script>
 </html>

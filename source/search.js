@@ -1,3 +1,15 @@
+/*
+Author: Fiona Waser
+
+All JavaScript functions for Search page.
+*/
+
+/*
+Sets the Datalist Element to Autocomplete values for user input.
+
+Parameters:
+input = user input
+*/
 function searchAttributeAutocomplete(input) {
 	var currentKeyword = input.split(" ");
 	

@@ -1,3 +1,9 @@
+/*
+A JavaScript implementation of Dijkstra's algorithm.
+
+Source: https://github.com/andrewhayward/dijkstra
+*/
+
 var Graph = (function (undefined) {
 
 	var extractKeys = function (obj) {

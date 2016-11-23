@@ -351,10 +351,26 @@ function findBridgeTables($tables) {
 	
 	$i = 0;
 	foreach($tables->table as $table) {
-		$nrAttributes = count($tables->table[$i]->attributes->attribute);
-		$nrConstraints = count($tables->table[$i]->constraints->constraint);
+		$bridgeTable = true;
 		
-		if($nrAttributes <= $nrConstraints) {
+		foreach($table->attributes->attribute as $attribute) {
+			$hasConstraint = false;
+			$currentAttributeName = $attribute->field;
+			
+			foreach($table->constraints->constraint as $constraint) {
+				$currentConstraintColumn = $constraint->column_name;
+				
+				if(strcmp($currentAttributeName, $currentConstraintColumn) == 0) {
+					$hasConstraint = true;
+				}
+			}
+			
+			if(!$hasConstraint) {
+				$bridgeTable = false;
+			}
+		}
+		
+		if($bridgeTable) {
 			$newTables->table[$i]->addAttribute("bridgeTable", true);
 		}
 		

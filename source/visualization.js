@@ -381,10 +381,13 @@ function drawDiagram() {
 			nr_rows_ordered_values.splice(index, 0, current_value);
 		}
 	}
+	console.log(values_nr_rows_domain);
+	console.log(nr_rows_ordered_values);
 	var values_nr_rows_range = [];
 	for(var n = 0; n < tables.length; n++) {
 		values_nr_rows_range[n] = density_color_picker(n);
 	}
+	console.log(values_nr_rows_range);
 	
 	// new color picker for nr. rows
 	var density_colors = d3.scale.linear()
@@ -428,14 +431,18 @@ function drawDiagram() {
 	// add tablename and nr. rows as tooltip 
 	group.append("title").text(function(d, i) {
 		var number = parseFloat(tables[i].children[1].textContent);
-		return tables[i].children[0].textContent+" ("+formatNumber(number)+" rows)";
+		if(number == 1) {
+			return tables[i].children[0].textContent+" ("+formatNumber(number)+" row)";	
+		} else {
+			return tables[i].children[0].textContent+" ("+formatNumber(number)+" rows)";
+		}
 	});
 
 	// draw parts of the circle according to layout
 	var groupPath = group.append("path")
-		.attr("id", function(d, i) { return "group" + i; })
+		.attr("id", function(d, i) { return "group" + d.index; })
 		.attr("d", arc)
-		.style("fill", function(d, i) { return density_colors(i); })
+		.style("fill", function(d, i) { return values_nr_rows_range[values_nr_rows_domain.indexOf(d.index)]; })
 		.style("fill-opacity", ".5")
 		.style("stroke", "black")
 		.style("stroke-width", ".25px")

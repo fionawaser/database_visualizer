@@ -7,10 +7,7 @@ Visualizations were implemented with D3.js.
 ## What do I need to get it to work?
 You need a webserver, MySQL and PHP (with mysqli). Also, you need a MySQL-Databse to visualize.
 
-This software was implemented and tested with Xampp for Windows Version 7.0.8, which includes
-Apache 2.4.18
-MariaDB 10.1.13
-PHP 7.0.8
+This software was implemented and tested with Xampp for Windows Version 7.0.8, which includes Apache 2.4.18, MariaDB 10.1.13 and PHP 7.0.8.
 
 ## How do I get it to work?
 1. Copy the whole content of the source directory to your desired directory on the webserver.

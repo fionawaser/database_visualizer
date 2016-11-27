@@ -22,8 +22,17 @@ Author: Fiona Waser
 			$db_name = $_POST['db_name'];
 			$db_host = $_POST['db_host'];
 			
-			$fileImportSuccess = true;
+			$config_file_content = "[database]\nuser = ".$db_user."\npassword = ".$db_pw."\ndb_name = ".$db_name."\nhost = ".$db_host;
 			
+			if(file_exists("config.ini")) {
+				unlink("config.ini");
+			}
+			
+			$fp = fopen("config.ini", "w");
+			fwrite($fp, $config_file_content);
+			fclose($fp);
+			
+			$fileImportSuccess = true;
 			if(!empty($_FILES['importFile']['name'])) {
 				$importFile = $_FILES['importFile'];
 				
@@ -39,16 +48,6 @@ Author: Fiona Waser
 					echo "<p>Back to <a href='index.php'>Welcome Page</a></p>";
 				}
 			}
-			
-			$config_file_content = "[database]\nuser = ".$db_user."\npassword = ".$db_pw."\ndb_name = ".$db_name."\nhost = ".$db_host;
-			
-			if(file_exists("config.ini")) {
-				unlink("config.ini");
-			}
-			
-			$fp = fopen("config.ini", "w");
-			fwrite($fp, $config_file_content);
-			fclose($fp);
 			
 			if(@checkDBInfos($db_user, $db_pw, $db_name, $db_host)) {
 				$con = mysqli_connect($db_host, $db_user, $db_pw);

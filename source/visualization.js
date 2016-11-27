@@ -9,29 +9,55 @@ All JavaScript code for the Visualization page (Visualization related only).
 
 var lowCardinalityThreshold = 50; // threshhold to determine the cardinality of attributes
 
-var tables = []; // tables in visualization with information
-var originalTables = []; // the tables after sorting
-var bridgeTables = []; // bridge tables if there are any
-var bridgeInvolvedTables = []; // all tables connected by bridge tables
+var tables; // tables in visualization with information
+var originalTables; // the tables after sorting
+var bridgeTables; // bridge tables if there are any
+var bridgeInvolvedTables; // all tables connected by bridge tables
 var graph; // graph filled to return join-paths
-var matrix = []; // matrix for chord connections as references between tables
-var references = []; // references for table connections with information about reference
-var attributeCardinalities = []; // cardinalitites for all attributes
-var attributeCardinalitiesPercentages = []; // cardinalitites for all attributes as percentage
-var constraintCardinalities = []; // cardinalitites for all constraints
-var constraintCardinalitiesPercentages = []; // cardinalitites for all constraints as percentage
-var chosenTables = []; // the tables the user has chosen for the query
-var chosenChord = null; // the chord the user has chosen for the query
-var chosenAttributes = []; // the chosen attributes
-var chosenAttributeAggrFunctions = []; // the chosen aggregate functions
-var chosenAttributesOrderBy = []; // the chosen ordering for the attributes
-var histogramChosenValues = []; // the chosen values in the histogram
-var hideBridgeTables = false; // true if there are bridge tables and the user has chosen to hide them
+var matrix; // matrix for chord connections as references between tables
+var reference; // references for table connections with information about reference
+var attributeCardinalities; // cardinalitites for all attributes
+var attributeCardinalitiesPercentages; // cardinalitites for all attributes as percentage
+var constraintCardinalities; // cardinalitites for all constraints
+var constraintCardinalitiesPercentages; // cardinalitites for all constraints as percentage
+var chosenTables; // the tables the user has chosen for the query
+var chosenChord; // the chord the user has chosen for the query
+var chosenAttributes; // the chosen attributes
+var chosenAttributeAggrFunctions; // the chosen aggregate functions
+var chosenAttributesOrderBy; // the chosen ordering for the attributes
+var histogramChosenValues; // the chosen values in the histogram
+var hideBridgeTables; // true if there are bridge tables and the user has chosen to hide them
+
+/*
+Initialize all global variables.
+*/
+function initializeVariables() {
+	tables = [];
+	originalTables = [];
+	bridgeTables = [];
+	bridgeInvolvedTables = [];
+	graph = [];
+	matrix = [];
+	references = [];
+	attributeCardinalities = [];
+	attributeCardinalitiesPercentages = [];
+	constraintCardinalities = [];
+	constraintCardinalitiesPercentages = [];
+	chosenTables = [];
+	chosenChord = null;
+	chosenAttributes = [];
+	chosenAttributeAggrFunctions = [];
+	chosenAttributesOrderBy = [];
+	histogramChosenValues = [];
+	hideBridgeTables = false;
+}
 
 /*
 Prepares the visualization data and calls to draw the visualization.
 */
 function prepareVisualizationData() {
+	
+	initializeVariables();
 	
 	// read the structure file
 	d3.xml("tables.xml", "application/xml", function(xml) {
@@ -301,14 +327,16 @@ function prepareVisualizationData() {
 		
 		graph = new Graph(map);
 		
-		drawChordDiagram();
+		drawDiagram();
 	});
 }
 
 /*
 Draws the chord diagram and related legends according to the set arrays.
 */
-function drawChordDiagram() {
+function drawDiagram() {
+	clearElement("#legendCardinalityGradient");
+	clearElement("#legendNrRowsGradient");
 	clearElement("#diagram");
 	
 	var diagramWidth = $(window).width()/2-20;
@@ -415,12 +443,14 @@ function drawChordDiagram() {
 			showAttributeInfo(d.index);
 			
 			if(d3.event.ctrlKey) {
-				if(chosenChord != null) {
-					chosenChord = null;
-					chosenTables = [];
-				}
+				chosenChord = null;
 				
-				chosenTables.push(d.index);
+				if(jQuery.inArray(d.index, chosenTables) != -1) {
+					var removeIndex = chosenTables.indexOf(d.index);
+					chosenTables.splice(removeIndex, 1);
+				} else {
+					chosenTables.push(d.index);
+				}
 				
 				$(".group path").css("stroke-width", ".25px");
 				$(".group path").css("stroke", "black");
@@ -459,12 +489,14 @@ function drawChordDiagram() {
 			showAttributeInfo(d.index);
 			
 			if(d3.event.ctrlKey) {
-				if(chosenChord != null) {
-					chosenChord = null;
-					chosenTables = [];
-				}
+				chosenChord = null;
 				
-				chosenTables.push(d.index);
+				if(jQuery.inArray(d.index, chosenTables) != -1) {
+					var removeIndex = chosenTables.indexOf(d.index);
+					chosenTables.splice(removeIndex, 1);
+				} else {
+					chosenTables.push(d.index);
+				}
 				
 				$(".group path").css("stroke-width", ".25px");
 				$(".group path").css("stroke", "black");
@@ -511,6 +543,10 @@ function drawChordDiagram() {
 		.on("click", function(d) {
 			if(d.source.index != d.target.index || (d.source.index == d.target.index && matrix[d.source.index][d.target.index] > 1)) {
 				chosenChord = d;
+				
+				if(chosenChord != null) {
+					chosenTables = [chosenChord.target.index, chosenChord.source.index];
+				}
 				
 				showAttributeInfo(chosenChord.source.index);
 				
@@ -955,10 +991,6 @@ function toggleOneAttribute(source) {
 This functions checks for user choices, then builds the query, executes it and shows the results.
 */
 function showRows() {
-	if(chosenChord != null) {
-		chosenTables = [chosenChord.target.index, chosenChord.source.index];
-	}
-	
 	if(chosenTables.length > 0) {
 		var chosenAttributesAll = true;
 		for(var i = 0; i < chosenAttributes.length; i++) {
@@ -1741,13 +1773,3 @@ function isSqlTypNumber(type) {
 	
 	return false;
 }
-
-/*
-jQuery function to simulate mouse click.
-*/
-jQuery.fn.d3Click = function () {
-  this.each(function (i, e) {
-    var evt = new MouseEvent("click");
-    e.dispatchEvent(evt);
-  });
-};

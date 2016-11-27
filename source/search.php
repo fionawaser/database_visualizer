@@ -66,6 +66,12 @@ $tables = simplexml_load_file("tables.xml");
 				$expression = $_POST['searchexpression'];
 			}
 			
+			$searchByAttribute = true;
+			
+			if(!strpos($expression, "=")) {
+				$searchByAttribute = false;
+			}
+			
 			preg_match_all('/"(?:\\\\.|[^\\\\"])*"|\S+/', $expression, $matches);
 			
 			$keywords = array();
@@ -74,18 +80,27 @@ $tables = simplexml_load_file("tables.xml");
 				array_push($keywords, $filtered);
 			}
 			
-			$searchByAttribute = false;
+			$searchByAttributeMapping = array();
+			$currentAttribute = "";
 			foreach($keywords as $keyword) {
-				$keywordCurrent = explode("=", $keyword);
-				if(sizeof($keywordCurrent) >= 2) {
-					$searchByAttribute = true;
-					
-					$searchByAttributeMapping = array();
-					foreach($keywords as $keywordPush) {
-						$current = explode("=", $keywordPush);
+				if($searchByAttribute) {
+					$keywordCurrent = explode("=", $keyword);
+					if(sizeof($keywordCurrent) >= 2) {
+						$attribute = $keywordCurrent[0];
+						$value = $keywordCurrent[1];
 						
-						array_push($searchByAttributeMapping, $current);
+						$currentAttribute = $attribute;
+						
+						$searchByAttributeMapping[$currentAttribute] = array();
+						
+						array_push($searchByAttributeMapping[$currentAttribute], $value);
+					} else {
+						$value = $keyword;
+						
+						array_push($searchByAttributeMapping[$currentAttribute], $value);
 					}
+				} else {
+					array_push($searchByAttributeMapping, $keyword);
 				}
 			}
 			
@@ -100,14 +115,17 @@ $tables = simplexml_load_file("tables.xml");
 			$query = "SELECT * FROM ".$_POST['searchTable']." WHERE ";
 			
 			if($searchByAttribute) {
-				$i = 0;
-				foreach($searchByAttributeMapping as $mapping) {
-					if($i == sizeof($searchByAttributeMapping)-1) {
-						$query .= $mapping[0]." LIKE '%".$mapping[1]."%'";	
-					} else {
-						$query .= $mapping[0]." LIKE '%".$mapping[1]."%' AND ";
+				foreach($searchByAttributeMapping as $attribute=>$values) {
+					$i = 0;
+					foreach($values as $value) {
+						if($i == sizeof($values)-1) {
+							$query .= $attribute." LIKE '%".$value."%'";	
+						} else {
+							$query .= $attribute." LIKE '%".$value."%' OR ";
+						}
+						
+						$i++;
 					}
-					$i++;
 				}
 			} else {
 				$attributes = array();
@@ -125,7 +143,7 @@ $tables = simplexml_load_file("tables.xml");
 					if($i == sizeof($keywords)-1) {
 						$query .= "CONCAT_WS(' '".$attrs.") LIKE '%".$keyword."%'";	
 					} else {
-						$query .= "CONCAT_WS(' '".$attrs.") LIKE '%".$keyword."%' AND ";
+						$query .= "CONCAT_WS(' '".$attrs.") LIKE '%".$keyword."%' OR ";
 					}
 					$i++;
 				}

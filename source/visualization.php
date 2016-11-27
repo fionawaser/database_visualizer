@@ -66,14 +66,14 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 		<div id="sortChordDiagram">
 			<span style="font-size: 12px; font-weight: bold; color: #000066;">Sort by:</span><br/>
 			<form action="" method="post">
-				<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onclick="window.location.reload();" checked> Alphabetical<br>
-				<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onclick="window.location.reload();"> Nr. Rows<br>
-				<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onclick="window.location.reload();"> Nr. Fields<br>
+				<input type="radio" id="sortModePath" name="sortModePath" value="alphabetical" onclick="prepareVisualizationData();" checked> Alphabetical<br>
+				<input type="radio" id="sortModePath" name="sortModePath" value="nrRows" onclick="prepareVisualizationData();"> Nr. Rows<br>
+				<input type="radio" id="sortModePath" name="sortModePath" value="nrFields" onclick="prepareVisualizationData();"> Nr. Fields<br>
 			</form>
 		</div>
 		<div id="showBridgeTables">
 			<form action="" method="post">
-				<span style="font-size: 12px; font-weight: bold; color: #000066;">Show Bridge Tables </span><input type="checkbox" id="showBridgeTablesCheck" name="showBridgeTablesCheck" value="Show Bridge Tables" disabled="disabled" onclick="window.location.reload();"/>
+				<span style="font-size: 12px; font-weight: bold; color: #000066;">Show Bridge Tables </span><input type="checkbox" id="showBridgeTablesCheck" name="showBridgeTablesCheck" value="Show Bridge Tables" disabled="disabled" onclick="prepareVisualizationData();"/>
 			</form>
 		</div>
 	</div>

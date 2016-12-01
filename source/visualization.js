@@ -381,13 +381,10 @@ function drawDiagram() {
 			nr_rows_ordered_values.splice(index, 0, current_value);
 		}
 	}
-	console.log(values_nr_rows_domain);
-	console.log(nr_rows_ordered_values);
 	var values_nr_rows_range = [];
 	for(var n = 0; n < tables.length; n++) {
 		values_nr_rows_range[n] = density_color_picker(n);
 	}
-	console.log(values_nr_rows_range);
 	
 	// new color picker for nr. rows
 	var density_colors = d3.scale.linear()
@@ -552,7 +549,7 @@ function drawDiagram() {
 				chosenChord = d;
 				
 				if(chosenChord != null) {
-					chosenTables = [chosenChord.target.index, chosenChord.source.index];
+					chosenTables = [chosenChord.source.index, chosenChord.target.index];
 				}
 				
 				showAttributeInfo(chosenChord.source.index);
@@ -882,14 +879,8 @@ function showAttributeInfo(index) {
 		var cardinalityInfo = "";
 		var percent = attributeCardinalitiesPercentages[index][j]*100;
 		var attrCardinality = parseFloat(attributeCardinalities[index][j]);
-		if(attrCardinality <= lowCardinalityThreshold) {
-			if(attrCardinality >= 1) {
-				cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
-			} else {
-				cardinalityInfo = "low ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
-			}
-		} else if(attrCardinality >= 1) {
-			cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
+		if(attrCardinality <= lowCardinalityThreshold && key != "PRI") {
+			cardinalityInfo = "low ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
 		} else {
 			cardinalityInfo = "high ("+formatNumber(attrCardinality)+" - "+formatNumber(percent)+"%)";
 		}
@@ -1516,7 +1507,7 @@ function prepareHistogram(tableId, table, attribute, attributeId, oldQuery) {
 	var nrAttributes = parseFloat(attributeCardinalities[tableId][attributeId]);
 	
 	if(oldQuery == "") {
-		if(nrAttributes <= 100 || confirm('You chose to see a histogram from "'+table+'" showing "'+attribute+'" with '+formatNumber(nrAttributes)+' different attribute values. Do you really want to continue?')) {
+		if(nrAttributes <= 100 || confirm('You chose to see a histogram from "'+table+'" showing "'+attribute+'" with '+formatNumber(nrAttributes)+' different attribute values. This could take a while. Do you really want to continue?')) {
 			var query = "SELECT "+attribute+", COUNT("+attribute+") FROM "+table+" GROUP BY "+attribute;
 			
 			var resultRows = "";			

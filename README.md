@@ -11,7 +11,7 @@ This software was implemented and tested with Xampp for Windows Version 7.0.8, w
 
 ## How do I get it to work?
 1. Copy the whole content of the source directory to your desired directory on the webserver.
-2. Go to the index page of you directory.
+2. Go to the index page of you directory (directory/index.php).
 3. To setup your first database to visualize, go to the setup page (use the link on the welcome page or go directly to directory/setup.php).
 4. Follow the instructions.
 5. Visit the visualization page and have fun with the tool.

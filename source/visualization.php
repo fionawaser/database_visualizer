@@ -93,7 +93,7 @@ if(isset($_POST['refreshConfirmation']) && $_POST['refreshConfirmation'] == "yes
 			<div id="rowsConfig">
 				<p>Number of rows: <input type="number" name="limit" id="limit" value="10" oninput="showRows();"/></p>
 			</div>
-			<div id="query"><p>Click some tables while holding the Ctrl-Key to run a query.</p></div>
+			<div id="query"><p>Click some tables while holding the Ctrl-Key (Windows and Linux) or Command-Key (Mac) to run a query.</p></div>
 			<div id="rowsTable"></div>
 		</div>
 </body>

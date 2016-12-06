@@ -446,7 +446,8 @@ function drawDiagram() {
 		.on("click", function(d) {
 			showAttributeInfo(d.index);
 			
-			if(d3.event.ctrlKey) {
+			// Bind to both command (for Mac) and control (for Win/Linux)
+			if(d3.event.ctrlKey || d3.event.metaKey) {
 				chosenChord = null;
 				
 				if(jQuery.inArray(d.index, chosenTables) != -1) {
@@ -492,7 +493,8 @@ function drawDiagram() {
 		.on("click", function(d) {
 			showAttributeInfo(d.index);
 			
-			if(d3.event.ctrlKey) {
+			// Bind to both command (for Mac) and control (for Win/Linux)
+			if(d3.event.ctrlKey || d3.event.metaKey) {
 				chosenChord = null;
 				
 				if(jQuery.inArray(d.index, chosenTables) != -1) {
@@ -554,7 +556,8 @@ function drawDiagram() {
 				
 				showAttributeInfo(chosenChord.source.index);
 				
-				if(d3.event.ctrlKey) {
+				// Bind to both command (for Mac) and control (for Win/Linux)
+				if(d3.event.ctrlKey || d3.event.metaKey) {
 					$(".group path").css("stroke-width", ".25px");
 					$(".group path").css("stroke", "black");
 					

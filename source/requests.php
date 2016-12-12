@@ -12,6 +12,8 @@ jQuery.ajax({
 	type: "POST",
 	url: 'requests.php',
 	dataType: 'json',
+	contentType: "application/x-www-form-urlencoded;charset=ISO-8859-15",
+	timeout: 0,
 	data: {functionname: 'processQueryHeaderRequest', argument: query},
 
 	success: function (obj, textstatus) {
@@ -39,11 +41,23 @@ if(!isset($_POST['argument'])) {
 if(!isset($result['error'])) {
 	switch($_POST['functionname']) {
 		case 'processQueryHeaderRequest':
-			$result['result'] = processQueryHeaderRequest($_POST['argument']);
+			$array = processQueryHeaderRequest($_POST['argument']);
+			array_walk_recursive($array, function(&$item, $key) {
+				if(is_string($item)) {
+					$item = iconv("CP1252", "UTF-8", $item);
+				}
+			});
+			$result['result'] = $array;
 			break;
 			
 		case 'processQueryRequest':
-			$result['result'] = processQueryRequest($_POST['argument']);
+			$array = processQueryRequest($_POST['argument']);
+			array_walk_recursive($array, function(&$item, $key) {
+				if(is_string($item)) {
+					$item = iconv("CP1252", "UTF-8", $item);
+				}
+			});
+			$result['result'] = $array;
 			break;
 			
 		case 'getAttributesAutocomplete':
@@ -56,5 +70,5 @@ if(!isset($result['error'])) {
 	}
 }
 
-echo json_encode($result);
+echo json_encode($result, JSON_UNESCAPED_UNICODE);
 ?>

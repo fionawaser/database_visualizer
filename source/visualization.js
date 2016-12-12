@@ -319,8 +319,10 @@ function prepareVisualizationData() {
 				var bridgeTablesConnect = bridgeInvolvedTables[i][1];
 				
 				for(var j = 0; j < bridgeTablesConnect.length; j++) {
-					map[bridgeTablesConnect[j]][bridgeTablename] = 0.5;
-					map[bridgeTablename][bridgeTablesConnect[j]] = 0.5;
+					if(!(typeof map[bridgeTablesConnect[j]] === 'undefined' || typeof map[bridgeTablename] === 'undefined')) {
+						map[bridgeTablesConnect[j]][bridgeTablename] = 0.5;
+						map[bridgeTablename][bridgeTablesConnect[j]] = 0.5;
+					}
 				}
 			}
 		}
@@ -1351,6 +1353,8 @@ function showRows() {
 			type: "POST",
 			url: 'requests.php',
 			dataType: 'json',
+			contentType: "application/x-www-form-urlencoded;charset=ISO-8859-15",
+			timeout: 0,
 			data: {functionname: 'processQueryRequest', argument: query},
 
 			success: function (obj, textstatus) {
@@ -1362,6 +1366,8 @@ function showRows() {
 						type: "POST",
 						url: 'requests.php',
 						dataType: 'json',
+						contentType: "application/x-www-form-urlencoded;charset=ISO-8859-15",
+						timeout: 0,
 						data: {functionname: 'processQueryHeaderRequest', argument: query},
 
 						success: function (obj, textstatus) {
@@ -1518,6 +1524,8 @@ function prepareHistogram(tableId, table, attribute, attributeId, oldQuery) {
 				type: "POST",
 				url: 'requests.php',
 				dataType: 'json',
+				contentType: "application/x-www-form-urlencoded;charset=ISO-8859-15",
+				timeout: 0,
 				data: {functionname: 'processQueryRequest', argument: query},
 
 				success: function (obj, textstatus) {
@@ -1564,6 +1572,8 @@ function prepareHistogram(tableId, table, attribute, attributeId, oldQuery) {
 			type: "POST",
 			url: 'requests.php',
 			dataType: 'json',
+			contentType: "application/x-www-form-urlencoded;charset=ISO-8859-15",
+			timeout: 0,
 			data: {functionname: 'processQueryRequest', argument: query},
 
 			success: function (obj, textstatus) {
